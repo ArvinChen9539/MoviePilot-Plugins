@@ -810,15 +810,13 @@
     "name": "ntfy消息推送",
     "description": "支持使用ntfy发送消息通知。",
     "labels": "消息通知",
-    "version": "1.3",
+    "version": "1.1",
     "icon": "Ntfy_A.png",
     "author": "lethargicScribe",
     "level": 1,
     "v2": true,
     "history": {
-      "v1.1": "添加Token认证和用户动作",
-      "v1.2": "修复 ntfy 通知图标链接失效的问题",
-      "v1.3": "修复标题或文本为空时，通知发送失败的问题"
+      "v1.1": "添加Token认证和用户动作"
     }
   },
   "GotifyMsg": {
@@ -849,6 +847,7 @@
     "icon": "Macos_Sierra.png",
     "author": "jxxghp",
     "level": 1,
+    "v2": true,
     "history": {
       "v1.4.1": "修复Bing壁纸命名问题",
       "v1.3": "适配MoviePilot v2.5.3+版本",
@@ -1053,5 +1052,19 @@
     "author": "cddjr",
     "level": 1,
     "v2": true
+  },
+  "PlayletFortuneWheel": {
+    "name": "PlayLet幸运大转盘",
+    "description": "每日抽奖，越抽越有",
+    "labels": "站点",
+    "version": "1.1.1",
+    "icon": "https://playletpt.xyz/favicon.ico",
+    "author": "ArvinChen9539",
+    "level": 1,
+    "v2": true,
+    "history": {
+      "v1.1.1": "降低抽奖频率 \n 增加统计消耗的魔力和赚取的魔力以及计算最终所得魔力 \n 根据赚和亏的比例设置相应的提示语",
+      "v1.1.0": "修复抽中彩虹id时报错的问题\n修复抽奖发生异常时没有提示和终止的问题"
+    }
   }
 }
