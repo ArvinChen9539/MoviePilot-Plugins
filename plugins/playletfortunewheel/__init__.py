@@ -24,7 +24,7 @@ class PlayletFortuneWheel(_PluginBase):
     # 插件图标
     plugin_icon = "https://playletpt.xyz/favicon.ico"
     # 插件版本
-    plugin_version = "1.1.1"
+    plugin_version = "1.1.2"
     # 插件作者
     plugin_author = "ArvinChen9539"
     # 作者主页
@@ -74,7 +74,7 @@ class PlayletFortuneWheel(_PluginBase):
 
         if config:
             self._enabled = config.get("enabled", False)
-            self._cron = config.get("cron", '0 9 * * *')
+            self._cron = config.get("cron", '')
             self._max_raffle_num = config.get("max_raffle_num")
             self._cookie = config.get("cookie")
             self._notify = config.get("notify", True)
@@ -847,7 +847,7 @@ class PlayletFortuneWheel(_PluginBase):
                                                             'variant': 'outlined',
                                                             'color': 'primary',
                                                             'hide-details': True,
-                                                            'placeholder': '默认每天执行',
+                                                            'placeholder': '请自行设置执行周期',
                                                             'class': 'mt-2'
                                                         }
                                                     }
