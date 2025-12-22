@@ -1055,10 +1055,10 @@
   },
   "PlayletFortuneWheel": {
     "name": "PlayLet幸运大转盘",
-    "description": "每日自动抽奖，坚持抽奖，越抽越幸运...",
+    "description": "每日抽奖，越抽越有",
     "labels": "站点",
-    "version": "1.1.0",
-    "icon": "playlet-fortune-wheel.png",
+    "version": "1.1.1",
+    "icon": "https://playletpt.xyz/favicon.ico",
     "author": "ArvinChen9539",
     "level": 1,
     "v2": true,

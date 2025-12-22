@@ -22,9 +22,9 @@ class PlayletFortuneWheel(_PluginBase):
     # 插件描述
     plugin_desc = "每日抽奖，越抽越有"
     # 插件图标
-    plugin_icon = "playlet-fortune-wheel.png"
+    plugin_icon = "https://playletpt.xyz/favicon.ico"
     # 插件版本
-    plugin_version = "1.1.0"
+    plugin_version = "1.1.1"
     # 插件作者
     plugin_author = "ArvinChen9539"
     # 作者主页
@@ -223,8 +223,8 @@ class PlayletFortuneWheel(_PluginBase):
                     results.append(f"❌ 执行异常: {str(e)}")
                     return results
 
-                # 间隔2秒后执行
-                time.sleep(2)
+                # 间隔5秒后执行（降低抽奖频率）
+                time.sleep(5)
 
             results = self.process_raffle_results({"success": True, "results": all_results})
 
@@ -253,6 +253,11 @@ class PlayletFortuneWheel(_PluginBase):
         grade_stats = {}
         total_count = len(raffle_results)
         win_count = 0  # 中奖次数（非"谢谢参与"）
+        
+        # 魔力统计相关变量
+        total_bonus_cost = 0  # 消耗的魔力
+        total_bonus_earned = 0  # 赚取的魔力
+        net_bonus = 0  # 净魔力（赚取-消耗）
 
         # 图标映射
         type_icons = {
@@ -338,7 +343,16 @@ class PlayletFortuneWheel(_PluginBase):
 
                 prize_stats[prize_type]["details"][detail_key]["count"] += 1
                 prize_stats[prize_type]["details"][detail_key]["total_value"] += value
+                
+                # 统计魔力消耗和赚取
+                if prize_type == "bonus":
+                    total_bonus_earned += value
+                elif result.get("cost", 0) > 0:  # 如果有消耗魔力
+                    total_bonus_cost += result.get("cost", 0)
 
+        # 计算净魔力
+        net_bonus = total_bonus_earned - total_bonus_cost
+        
         # 生成报告
         results.append(f"🎰 总抽奖次数: {total_count}")
         results.append(f"🎯 中奖次数: {win_count}")
@@ -347,6 +361,34 @@ class PlayletFortuneWheel(_PluginBase):
         if win_count > 0:
             win_rate = (win_count / total_count) * 100
             results.append(f"📊 中奖率: {win_rate:.1f}%")
+            
+        # 添加魔力统计
+        results.append(f"💰 消耗魔力: {total_bonus_cost}")
+        results.append(f"💵 赚取魔力: {total_bonus_earned}")
+        if net_bonus >= 0:
+            results.append(f"📈 净赚魔力: {net_bonus}")
+        else:
+            results.append(f"📉 净亏魔力: {abs(net_bonus)}")
+        
+        # 根据盈亏情况添加提示语
+        if total_bonus_cost > 0:  # 有消耗才计算盈亏比例
+            profit_ratio = total_bonus_earned / total_bonus_cost if total_bonus_cost > 0 else 0
+            if profit_ratio >= 2:
+                results.append("🎉 赚翻了！这波血赚，下次继续冲！")
+            elif profit_ratio >= 1.5:
+                results.append("😊 赚了不少！这波很划算！")
+            elif profit_ratio >= 1:
+                results.append("🙂 回本万岁！至少没亏钱！")
+            elif profit_ratio >= 0.5:
+                results.append("😐 亏得不多，就当花钱娱乐了！")
+            else:
+                results.append("😢 亏得有点多，建议见好就收！")
+        elif total_bonus_earned > 0:
+            results.append("🎊 全是白赚！血赚不亏！")
+        elif total_bonus_cost > 0:
+            results.append("💸 全部亏光！这波亏麻了！")
+        else:
+            results.append("😐 今天无事发生，既没赚也没亏！")
 
         # 添加分隔线
         results.append("─" * 40)
