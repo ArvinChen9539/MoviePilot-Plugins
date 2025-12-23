@@ -24,7 +24,7 @@ class PlayletFortuneWheel(_PluginBase):
     # 插件图标
     plugin_icon = "https://playletpt.xyz/favicon.ico"
     # 插件版本
-    plugin_version = "1.1.2"
+    plugin_version = "1.1.3"
     # 插件作者
     plugin_author = "ArvinChen9539"
     # 作者主页
@@ -205,7 +205,7 @@ class PlayletFortuneWheel(_PluginBase):
                     if not flag:
                         logger.error(f"抽奖失败: {str(response_json)}")
                         error_msg = response_json.get("message", "未知错误")
-                        results = self.process_raffle_results({"success": True, "results": all_results})
+                        results = self.process_raffle_results({"success": True, "results": all_results}, free_count)
                         results.append("")
                         results.append(f"❌ 抽奖失败: {error_msg}")
                         results.append("")
@@ -218,7 +218,7 @@ class PlayletFortuneWheel(_PluginBase):
                     logger.info(f"抽奖成功")
                 except Exception as e:
                     logger.error(f"转换接口返回数据时异常: {str(e)}",e)
-                    results = self.process_raffle_results({"success": True, "results": all_results})
+                    results = self.process_raffle_results({"success": True, "results": all_results}, free_count)
                     results.append("")
                     results.append(f"❌ 执行异常: {str(e)}")
                     return results
@@ -226,14 +226,20 @@ class PlayletFortuneWheel(_PluginBase):
                 # 间隔5秒后执行（降低抽奖频率）
                 time.sleep(5)
 
-            results = self.process_raffle_results({"success": True, "results": all_results})
+            results = self.process_raffle_results({"success": True, "results": all_results}, free_count)
 
         else:
             logger.info(f"抽奖次数已用完")
 
         return results
 
-    def process_raffle_results(self, response_data: dict) -> List[str]:
+    # 数值大于1W时显示为*W
+    def format_num(self,num: int):
+        if num >= 10000:
+            return f"{num / 10000:.1f}W"
+        return str(num)
+
+    def process_raffle_results(self, response_data: dict,free_count: int = 0) -> List[str]:
         results = []
 
         if not response_data.get("success", False):
@@ -338,17 +344,20 @@ class PlayletFortuneWheel(_PluginBase):
                 if detail_key not in prize_stats[prize_type]["details"]:
                     prize_stats[prize_type]["details"][detail_key] = {
                         "count": 0,
-                        "total_value": 0
+                        "total_value": 0,
+                        "unit": "未知",
                     }
 
                 prize_stats[prize_type]["details"][detail_key]["count"] += 1
+                prize_stats[prize_type]["details"][detail_key]["unit"] = unit
                 prize_stats[prize_type]["details"][detail_key]["total_value"] += value
                 
-                # 统计魔力消耗和赚取
-                if prize_type == "bonus":
+                # 统计魔力赚取
+                if unit == "魔力值":
                     total_bonus_earned += value
-                elif result.get("cost", 0) > 0:  # 如果有消耗魔力
-                    total_bonus_cost += result.get("cost", 0)
+
+        # 计算消耗魔力(暂时固定每次1000)
+        total_bonus_cost = (total_count - free_count) * 1000
 
         # 计算净魔力
         net_bonus = total_bonus_earned - total_bonus_cost
@@ -363,12 +372,12 @@ class PlayletFortuneWheel(_PluginBase):
             results.append(f"📊 中奖率: {win_rate:.1f}%")
             
         # 添加魔力统计
-        results.append(f"💰 消耗魔力: {total_bonus_cost}")
-        results.append(f"💵 赚取魔力: {total_bonus_earned}")
+        results.append(f"💰 消耗魔力: {self.format_num(total_bonus_cost)}")
+        results.append(f"💵 赚取魔力: {self.format_num(total_bonus_earned)}")
         if net_bonus >= 0:
-            results.append(f"📈 净赚魔力: {net_bonus}")
+            results.append(f"📈 净赚魔力: {self.format_num(net_bonus)}")
         else:
-            results.append(f"📉 净亏魔力: {abs(net_bonus)}")
+            results.append(f"📉 净亏魔力: {self.format_num(abs(net_bonus))}")
         
         # 根据盈亏情况添加提示语
         if total_bonus_cost > 0:  # 有消耗才计算盈亏比例
@@ -391,7 +400,7 @@ class PlayletFortuneWheel(_PluginBase):
             results.append("😐 今天无事发生，既没赚也没亏！")
 
         # 添加分隔线
-        results.append("─" * 40)
+        results.append("─" * 20)
 
         # 按奖励类型展示详情
         results.append("🏆 奖励详情:")
@@ -405,13 +414,16 @@ class PlayletFortuneWheel(_PluginBase):
 
             for detail, info in stat["details"].items():
                 total_value = info["total_value"]
+                if info["unit"] == "魔力值":
+                    total_value = self.format_num(total_value)
+
                 detail_count = info["count"]
                 results.append(f"    🎁 {detail}: {total_value} ({detail_count}次)")
 
             results.append("")
 
         # 添加分隔线
-        results.append("─" * 40)
+        results.append("─" * 20)
 
         # 等级分布统计
         results.append("🏅 等级分布:")
