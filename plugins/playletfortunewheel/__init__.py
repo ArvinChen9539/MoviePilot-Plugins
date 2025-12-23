@@ -24,7 +24,7 @@ class PlayletFortuneWheel(_PluginBase):
     # 插件图标
     plugin_icon = "https://playletpt.xyz/favicon.ico"
     # 插件版本
-    plugin_version = "1.1.3"
+    plugin_version = "1.1.4"
     # 插件作者
     plugin_author = "ArvinChen9539"
     # 作者主页
@@ -185,6 +185,8 @@ class PlayletFortuneWheel(_PluginBase):
             # 只能进行1次 10次 20次 50次的抽取 需要把exec_count转换为调用多次
             all_results = []
 
+            error_num = 0
+
             while exec_count > 0:
                 num = 1
                 if exec_count >= 50:
@@ -193,7 +195,6 @@ class PlayletFortuneWheel(_PluginBase):
                     num = 20
                 elif exec_count >= 10:
                     num = 10
-
 
                 # 解析返回结果
                 try:
@@ -217,12 +218,17 @@ class PlayletFortuneWheel(_PluginBase):
                     exec_count -= num
                     logger.info(f"抽奖成功")
                 except Exception as e:
-                    logger.error(f"转换接口返回数据时异常: {str(e)}",e)
-                    results = self.process_raffle_results({"success": True, "results": all_results}, free_count)
-                    results.append("")
-                    results.append(f"❌ 执行异常: {str(e)}")
-                    return results
-
+                    logger.error(f"转换接口返回数据时异常: {str(e)}", e)
+                    error_num += 1
+                    if error_num > 5:
+                        logger.error(f"抽奖异常次数过多，停止执行")
+                        results = self.process_raffle_results({"success": True, "results": all_results}, free_count)
+                        results.append("")
+                        results.append(f"❌ 抽奖异常: {str(e)}")
+                        results.append("")
+                        results.append(f"🎯 剩余次数: {remain_count - len(all_results)}")
+                        return results
+                    logger.error(f"抽奖异常次数: {str(error_num)}，继续执行")
                 # 间隔5秒后执行（降低抽奖频率）
                 time.sleep(5)
 
@@ -234,12 +240,12 @@ class PlayletFortuneWheel(_PluginBase):
         return results
 
     # 数值大于1W时显示为*W
-    def format_num(self,num: int):
+    def format_num(self, num: int):
         if num >= 10000:
             return f"{num / 10000:.1f}W"
         return str(num)
 
-    def process_raffle_results(self, response_data: dict,free_count: int = 0) -> List[str]:
+    def process_raffle_results(self, response_data: dict, free_count: int = 0) -> List[str]:
         results = []
 
         if not response_data.get("success", False):
@@ -259,7 +265,7 @@ class PlayletFortuneWheel(_PluginBase):
         grade_stats = {}
         total_count = len(raffle_results)
         win_count = 0  # 中奖次数（非"谢谢参与"）
-        
+
         # 魔力统计相关变量
         total_bonus_cost = 0  # 消耗的魔力
         total_bonus_earned = 0  # 赚取的魔力
@@ -274,7 +280,7 @@ class PlayletFortuneWheel(_PluginBase):
             "nothing": "😞",
             "invite_perm": "🎉",
             "invite_temp": "🎉",
-            "rainbow_id" : "🌈",
+            "rainbow_id": "🌈",
         }
         type_name = {
             "upload": "流量",
@@ -284,7 +290,7 @@ class PlayletFortuneWheel(_PluginBase):
             "nothing": "谢谢参与",
             "invite_perm": "永久邀请",
             "invite_temp": "临时邀请",
-            "rainbow_id" : "彩虹ID"
+            "rainbow_id": "彩虹ID"
         }
 
         grade_icons = {
@@ -351,7 +357,7 @@ class PlayletFortuneWheel(_PluginBase):
                 prize_stats[prize_type]["details"][detail_key]["count"] += 1
                 prize_stats[prize_type]["details"][detail_key]["unit"] = unit
                 prize_stats[prize_type]["details"][detail_key]["total_value"] += value
-                
+
                 # 统计魔力赚取
                 if unit == "魔力值":
                     total_bonus_earned += value
@@ -361,7 +367,7 @@ class PlayletFortuneWheel(_PluginBase):
 
         # 计算净魔力
         net_bonus = total_bonus_earned - total_bonus_cost
-        
+
         # 生成报告
         results.append(f"🎰 总抽奖次数: {total_count}")
         results.append(f"🎯 中奖次数: {win_count}")
@@ -370,7 +376,7 @@ class PlayletFortuneWheel(_PluginBase):
         if win_count > 0:
             win_rate = (win_count / total_count) * 100
             results.append(f"📊 中奖率: {win_rate:.1f}%")
-            
+
         # 添加魔力统计
         results.append(f"💰 消耗魔力: {self.format_num(total_bonus_cost)}")
         results.append(f"💵 赚取魔力: {self.format_num(total_bonus_earned)}")
@@ -378,7 +384,7 @@ class PlayletFortuneWheel(_PluginBase):
             results.append(f"📈 净赚魔力: {self.format_num(net_bonus)}")
         else:
             results.append(f"📉 净亏魔力: {self.format_num(abs(net_bonus))}")
-        
+
         # 根据盈亏情况添加提示语
         if total_bonus_cost > 0:  # 有消耗才计算盈亏比例
             profit_ratio = total_bonus_earned / total_bonus_cost if total_bonus_cost > 0 else 0
@@ -410,7 +416,7 @@ class PlayletFortuneWheel(_PluginBase):
 
             icon = stat["icon"]
             count = stat["count"]
-            results.append(f"  {icon} {type_name.get(prize_type,'未知') or prize_type.upper()} 类奖励 ({count}次)")
+            results.append(f"  {icon} {type_name.get(prize_type, '未知') or prize_type.upper()} 类奖励 ({count}次)")
 
             for detail, info in stat["details"].items():
                 total_value = info["total_value"]
@@ -474,9 +480,9 @@ class PlayletFortuneWheel(_PluginBase):
                     "auto_cookie": self._auto_cookie,
                     "last_report": self._last_report
                 })
-                logger.info(f"每日抽奖任务完成：\n{report}")
+                logger.info(f"每日抽奖任务完成")
             else:
-                logger.info("抽奖次数已用完，未发送通知")
+                logger.info("未抽奖，不发送通知")
 
         except Exception as e:
             logger.error(f"执行每日抽奖任务时发生异常: {str(e)}")
