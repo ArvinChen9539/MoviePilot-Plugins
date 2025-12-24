@@ -24,7 +24,7 @@ class PlayletFortuneWheel(_PluginBase):
     # 插件图标
     plugin_icon = "https://playletpt.xyz/favicon.ico"
     # 插件版本
-    plugin_version = "1.1.4"
+    plugin_version = "1.1.5"
     # 插件作者
     plugin_author = "ArvinChen9539"
     # 作者主页
@@ -242,7 +242,12 @@ class PlayletFortuneWheel(_PluginBase):
     # 数值大于1W时显示为*W
     def format_num(self, num: int):
         if num >= 10000:
-            return f"{num / 10000:.1f}W"
+            result = num / 10000
+            # 如果结果是整数，则显示为整数，否则保留一位小数
+            if result.is_integer():
+                return f"{int(result)}W"
+            else:
+                return f"{result:.1f}W"
         return str(num)
 
     def process_raffle_results(self, response_data: dict, free_count: int = 0) -> List[str]:
