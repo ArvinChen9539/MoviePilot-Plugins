@@ -1054,15 +1054,16 @@
     "v2": true
   },
   "PlayletFortuneWheel": {
-    "name": "PlayLet幸运大转盘",
+    "name": "PlayLet幸运转盘",
     "description": "每日抽奖，越抽越有",
     "labels": "站点",
-    "version": "1.1.5",
+    "version": "1.1.6",
     "icon": "https://playletpt.xyz/favicon.ico",
     "author": "ArvinChen9539",
     "level": 1,
     "v2": true,
     "history": {
+      "v1.1.6": "调整报告中奖励详情和等级分布的顺序 \n 调整插件名称减少一个字,优化显示",
       "v1.1.5": "优化魔力显示,整除时不显示.0",
       "v1.1.4": "增加抽奖错误重试机制,提高稳定性",
       "v1.1.3": "修复魔力值统计错误的问题 \n 优化大数据量魔力值的显示效果",

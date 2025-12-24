@@ -18,13 +18,13 @@ from app.db.site_oper import SiteOper
 
 class PlayletFortuneWheel(_PluginBase):
     # 插件名称
-    plugin_name = "Playlet幸运大转盘"
+    plugin_name = "Playlet幸运转盘"
     # 插件描述
     plugin_desc = "每日抽奖，越抽越有"
     # 插件图标
     plugin_icon = "https://playletpt.xyz/favicon.ico"
     # 插件版本
-    plugin_version = "1.1.5"
+    plugin_version = "1.1.6"
     # 插件作者
     plugin_author = "ArvinChen9539"
     # 作者主页
@@ -93,12 +93,12 @@ class PlayletFortuneWheel(_PluginBase):
         if self._onlyonce:
             try:
                 self._scheduler = BackgroundScheduler(timezone=settings.TZ)
-                logger.info(f"Playlet幸运大转盘服务启动，立即运行一次")
+                logger.info(f"Playlet幸运转盘服务启动，立即运行一次")
 
                 # 执行每日任务
                 self._scheduler.add_job(func=self._auto_task, trigger='date',
                                         run_date=datetime.now(tz=pytz.timezone(settings.TZ)) + timedelta(seconds=3),
-                                        name="Playlet幸运大转盘-自动执行")
+                                        name="Playlet幸运转盘-自动执行")
 
                 # 关闭一次性开关
                 self._onlyonce = False
@@ -120,7 +120,7 @@ class PlayletFortuneWheel(_PluginBase):
                     self._scheduler.print_jobs()
                     self._scheduler.start()
             except Exception as e:
-                logger.error(f"Playlet幸运大转盘服务启动失败: {str(e)}")
+                logger.error(f"Playlet幸运转盘服务启动失败: {str(e)}")
 
     # 清理Cookie无效值
     @staticmethod
@@ -413,6 +413,26 @@ class PlayletFortuneWheel(_PluginBase):
         # 添加分隔线
         results.append("─" * 20)
 
+        # 等级分布统计
+        results.append("🏅 等级分布:")
+        # 按等级排序显示
+        sorted_grades = sorted(grade_stats.items(),
+                               key=lambda x: int(re.search(r'(\d+)等奖', x[0]).group(1)) if re.search(r'(\d+)等奖',
+                                                                                                      x[0]) else 99)
+
+        for grade, count in sorted_grades:
+            grade_num = re.search(r'(\d+)等奖', grade)
+            if grade_num:
+                grade_key = grade_num.group(1)
+                icon = grade_icons.get(grade_key, "🎗️")
+            else:
+                icon = "❓"
+            results.append(f"  {icon} {grade}: {count}次")
+
+
+        # 添加分隔线
+        results.append("─" * 20)
+
         # 按奖励类型展示详情
         results.append("🏆 奖励详情:")
         for prize_type, stat in prize_stats.items():
@@ -433,25 +453,6 @@ class PlayletFortuneWheel(_PluginBase):
 
             results.append("")
 
-        # 添加分隔线
-        results.append("─" * 20)
-
-        # 等级分布统计
-        results.append("🏅 等级分布:")
-        # 按等级排序显示
-        sorted_grades = sorted(grade_stats.items(),
-                               key=lambda x: int(re.search(r'(\d+)等奖', x[0]).group(1)) if re.search(r'(\d+)等奖',
-                                                                                                      x[0]) else 99)
-
-        for grade, count in sorted_grades:
-            grade_num = re.search(r'(\d+)等奖', grade)
-            if grade_num:
-                grade_key = grade_num.group(1)
-                icon = grade_icons.get(grade_key, "🎗️")
-            else:
-                icon = "❓"
-            results.append(f"  {icon} {grade}: {count}次")
-
         return results
 
     def _auto_task(self):
@@ -470,7 +471,7 @@ class PlayletFortuneWheel(_PluginBase):
                 if self._notify:
                     self.post_message(
                         mtype=NotificationType.SiteMessage,
-                        title="【Playlet幸运大转盘】每日任务完成",
+                        title="【Playlet幸运转盘】每日任务完成",
                         text=report)
                 self._last_report = report
                 self.update_config({
@@ -504,7 +505,7 @@ class PlayletFortuneWheel(_PluginBase):
                 return "ℹ️ 没有抽奖次数"
 
             # 生成报告
-            report = "🎮 Playlet幸运大转盘抽奖报告\n"
+            report = "🎮 Playlet幸运转盘抽奖报告\n"
             report += "━━━━━━━━━━━━━━\n"
 
             # 添加抽奖结果
@@ -601,7 +602,7 @@ class PlayletFortuneWheel(_PluginBase):
         if self._cron:
             service.append({
                 "id": "autoPlayletFortuneWheel",
-                "name": "Playlet幸运大转盘 - 自动执行",
+                "name": "Playlet幸运转盘 - 自动执行",
                 "trigger": CronTrigger.from_crontab(self._cron),
                 "func": self._auto_task,
                 "kwargs": {}
