@@ -413,6 +413,26 @@ class PlayletFortuneWheel(_PluginBase):
         # 添加分隔线
         results.append("─" * 20)
 
+        # 等级分布统计
+        results.append("🏅 等级分布:")
+        # 按等级排序显示
+        sorted_grades = sorted(grade_stats.items(),
+                               key=lambda x: int(re.search(r'(\d+)等奖', x[0]).group(1)) if re.search(r'(\d+)等奖',
+                                                                                                      x[0]) else 99)
+
+        for grade, count in sorted_grades:
+            grade_num = re.search(r'(\d+)等奖', grade)
+            if grade_num:
+                grade_key = grade_num.group(1)
+                icon = grade_icons.get(grade_key, "🎗️")
+            else:
+                icon = "❓"
+            results.append(f"  {icon} {grade}: {count}次")
+
+
+        # 添加分隔线
+        results.append("─" * 20)
+
         # 按奖励类型展示详情
         results.append("🏆 奖励详情:")
         for prize_type, stat in prize_stats.items():
@@ -432,25 +452,6 @@ class PlayletFortuneWheel(_PluginBase):
                 results.append(f"    🎁 {detail}: {total_value} ({detail_count}次)")
 
             results.append("")
-
-        # 添加分隔线
-        results.append("─" * 20)
-
-        # 等级分布统计
-        results.append("🏅 等级分布:")
-        # 按等级排序显示
-        sorted_grades = sorted(grade_stats.items(),
-                               key=lambda x: int(re.search(r'(\d+)等奖', x[0]).group(1)) if re.search(r'(\d+)等奖',
-                                                                                                      x[0]) else 99)
-
-        for grade, count in sorted_grades:
-            grade_num = re.search(r'(\d+)等奖', grade)
-            if grade_num:
-                grade_key = grade_num.group(1)
-                icon = grade_icons.get(grade_key, "🎗️")
-            else:
-                icon = "❓"
-            results.append(f"  {icon} {grade}: {count}次")
 
         return results
 
