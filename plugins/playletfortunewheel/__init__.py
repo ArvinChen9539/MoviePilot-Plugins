@@ -22,9 +22,9 @@ class PlayletFortuneWheel(_PluginBase):
     # 插件描述
     plugin_desc = "每日抽奖，越抽越有"
     # 插件图标
-    plugin_icon = "https://playletpt.xyz/favicon.ico"
+    plugin_icon = "https://img.seedvault.cn/i/2025/12/25/PlayletFortuneWheel694d0efda8a31383.png"
     # 插件版本
-    plugin_version = "1.1.6"
+    plugin_version = "1.1.7"
     # 插件作者
     plugin_author = "ArvinChen9539"
     # 作者主页
