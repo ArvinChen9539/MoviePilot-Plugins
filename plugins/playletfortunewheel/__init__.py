@@ -1,19 +1,18 @@
-import pytz
-import requests
 import re
 import time
-
 from datetime import datetime, timedelta
 from typing import Any, List, Dict, Tuple, Optional
 
-from apscheduler.triggers.cron import CronTrigger
+import pytz
+import requests
 from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.cron import CronTrigger
 
-from app.log import logger
 from app.core.config import settings
+from app.db.site_oper import SiteOper
+from app.log import logger
 from app.plugins import _PluginBase
 from app.schemas import NotificationType
-from app.db.site_oper import SiteOper
 
 
 class PlayletFortuneWheel(_PluginBase):
@@ -24,7 +23,7 @@ class PlayletFortuneWheel(_PluginBase):
     # 插件图标
     plugin_icon = "https://raw.githubusercontent.com/ArvinChen9539/MoviePilot-Plugins/feature-playlet-fortune-wheel/icons/PlayletFortuneWheel.png"
     # 插件版本
-    plugin_version = "1.1.8"
+    plugin_version = "1.1.9"
     # 插件作者
     plugin_author = "ArvinChen9539"
     # 作者主页
@@ -45,6 +44,18 @@ class PlayletFortuneWheel(_PluginBase):
 
     # 只抽免费
     _only_free: bool = False
+
+    # 中一等奖是否喊话
+    _announce_first: bool = True
+    _default_announce_first_content: str = "🎉🎉🎉🥇😊"
+    # 一等奖喊话内容
+    _announce_first_content: str = _default_announce_first_content
+
+    # 中二等奖是否喊话
+    _announce_second: bool = True
+    _default_announce_second_content: str = "🎉🎉🎉🥈🙂"
+    # 二等奖喊话内容
+    _announce_second_content: str = _default_announce_second_content
 
     # 保存最后一次抽奖报告
     _last_report: Optional[str] = None
@@ -82,6 +93,10 @@ class PlayletFortuneWheel(_PluginBase):
             self._use_proxy = config.get("use_proxy", False)
             self._only_free = config.get("only_free", False)
             self._auto_cookie = config.get("auto_cookie", True)
+            self._announce_first = config.get("announce_first", True)
+            self._announce_first_content = config.get("announce_first_content", self._default_announce_first_content)
+            self._announce_second = config.get("announce_second", True)
+            self._announce_second_content = config.get("announce_second_content", self._default_announce_second_content)
             self._last_report = config.get("last_report")
 
             # 处理自动获取cookie
@@ -112,7 +127,11 @@ class PlayletFortuneWheel(_PluginBase):
                     "use_proxy": self._use_proxy,
                     "only_free": self._only_free,
                     "auto_cookie": self._auto_cookie,
-                    "last_report": self._last_report
+                    "last_report": self._last_report,
+                    "announce_first": self._announce_first,
+                    "announce_first_content": self._announce_first_content,
+                    "announce_second": self._announce_second,
+                    "announce_second_content": self._announce_second_content,
                 })
 
                 # 启动任务
@@ -420,15 +439,23 @@ class PlayletFortuneWheel(_PluginBase):
                                key=lambda x: int(re.search(r'(\d+)等奖', x[0]).group(1)) if re.search(r'(\d+)等奖',
                                                                                                       x[0]) else 99)
 
+        # 是否中一等奖
+        _is_first_win = False
+        # 是否中二等奖
+        _is_second_win = False
         for grade, count in sorted_grades:
             grade_num = re.search(r'(\d+)等奖', grade)
             if grade_num:
                 grade_key = grade_num.group(1)
                 icon = grade_icons.get(grade_key, "🎗️")
+
+                if grade_key == "1":
+                    _is_first_win = True
+                elif grade_key == "2":
+                    _is_second_win = True
             else:
                 icon = "❓"
             results.append(f"  {icon} {grade}: {count}次")
-
 
         # 添加分隔线
         results.append("─" * 20)
@@ -452,6 +479,22 @@ class PlayletFortuneWheel(_PluginBase):
                 results.append(f"    🎁 {detail}: {total_value} ({detail_count}次)")
 
             results.append("")
+
+        # 发送喊话
+        self.headers = {
+            "cookie": self.clean_cookie_value(self._cookie),
+            "referer": self._site_url,
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36 Edg/132.0.0.0"
+        }
+        if _is_first_win and self._announce_first and self._announce_first_content:
+            requests.get(
+                self._site_url + "/shoutbox.php?shbox_text=" + self._announce_first_content + "&shout=%E6%88%91%E5%96%8A&sent=yes&type=shoutbox",
+                headers=self.headers, proxies=self._get_proxies())
+
+        if _is_second_win and self._announce_second and self._announce_second_content:
+            requests.get(
+                self._site_url + "/shoutbox.php?shbox_text=" + self._announce_second_content + "&shout=%E6%88%91%E5%96%8A&sent=yes&type=shoutbox",
+                headers=self.headers, proxies=self._get_proxies())
 
         return results
 
@@ -484,7 +527,11 @@ class PlayletFortuneWheel(_PluginBase):
                     "use_proxy": self._use_proxy,
                     "only_free": self._only_free,
                     "auto_cookie": self._auto_cookie,
-                    "last_report": self._last_report
+                    "last_report": self._last_report,
+                    "announce_first": self._announce_first,
+                    "announce_first_content": self._announce_first_content,
+                    "announce_second": self._announce_second,
+                    "announce_second_content": self._announce_second_content,
                 })
                 logger.info(f"每日抽奖任务完成")
             else:
@@ -904,6 +951,142 @@ class PlayletFortuneWheel(_PluginBase):
                             }
                         ]
                     },
+                    # 喊话设置
+                    {
+                        'component': 'VCard',
+                        'props': {
+                            'variant': 'flat',
+                            'class': 'mb-6',
+                            'color': 'surface'
+                        },
+                        'content': [
+                            {
+                                'component': 'VCardItem',
+                                'props': {
+                                    'class': 'pa-6'
+                                },
+                                'content': [
+                                    {
+                                        'component': 'VCardTitle',
+                                        'props': {
+                                            'class': 'd-flex align-center text-h6'
+                                        },
+                                        'content': [
+                                            {
+                                                'component': 'VIcon',
+                                                'props': {
+                                                    'style': 'color: #16b1ff',
+                                                    'class': 'mr-3',
+                                                    'size': 'default'
+                                                },
+                                                'text': 'mdi-chat-typing-outline'
+                                            },
+                                            {
+                                                'component': 'span',
+                                                'text': '中奖喊话设置'
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                'component': 'VCardText',
+                                'props': {
+                                    'class': 'px-6 pb-6'
+                                },
+                                'content': [
+                                    {
+                                        'component': 'VRow',
+                                        'content': [
+                                            {
+                                                'component': 'VCol',
+                                                'props': {
+                                                    'cols': 12,
+                                                    'sm': 3,
+                                                    'class': 'd-flex align-sm-center'
+                                                },
+                                                'content': [
+                                                    {
+                                                        'component': 'VSwitch',
+                                                        'props': {
+                                                            'model': 'announce_first',
+                                                            'label': '一等奖喊话',
+                                                            'color': 'primary',
+                                                            'hide-details': True
+                                                        }
+                                                    }
+                                                ]
+                                            },
+                                            {
+                                                'component': 'VCol',
+                                                'props': {
+                                                    'cols': 12,
+                                                    'sm': 9,
+                                                },
+                                                'content': [
+                                                    {
+                                                        'component': 'VTextField',
+                                                        'props': {
+                                                            'model': 'announce_first_content',
+                                                            'label': '喊话内容',
+                                                            'variant': 'outlined',
+                                                            'color': 'primary',
+                                                            'hide-details': True,
+                                                            'class': 'mt-2 w-full',
+                                                        }
+                                                    }
+                                                ]
+                                            },
+                                        ]
+                                    },
+                                    {
+                                        'component': 'VRow',
+                                        'content': [
+                                            {
+                                                'component': 'VCol',
+                                                'props': {
+                                                    'cols': 12,
+                                                    'sm': 3,
+                                                    'class': 'd-flex align-sm-center'
+                                                },
+                                                'content': [
+                                                    {
+                                                        'component': 'VSwitch',
+                                                        'props': {
+                                                            'model': 'announce_second',
+                                                            'label': '二等奖喊话',
+                                                            'color': 'primary',
+                                                            'hide-details': True
+                                                        }
+                                                    }
+                                                ]
+                                            },
+                                            {
+                                                'component': 'VCol',
+                                                'props': {
+                                                    'cols': 12,
+                                                    'sm': 9
+                                                },
+                                                'content': [
+                                                    {
+                                                        'component': 'VTextField',
+                                                        'props': {
+                                                            'model': 'announce_second_content',
+                                                            'label': '喊话内容',
+                                                            'variant': 'outlined',
+                                                            'color': 'primary',
+                                                            'hide-details': True,
+                                                            'class': 'mt-2 w-full',
+                                                        }
+                                                    }
+                                                ]
+                                            },
+                                        ]
+                                    },
+                                ]
+                            }
+                        ]
+                    },
                     # 使用说明
                     {
                         'component': 'VCard',
@@ -986,6 +1169,10 @@ class PlayletFortuneWheel(_PluginBase):
             "cron": "0 9 * * *",
             "max_raffle_num": None,
             "last_report": "",
+            "announce_first": True,
+            "announce_first_content": self._default_announce_first_content,
+            "announce_second": True,
+            "announce_second_content": self._default_announce_second_content,
         }
 
     def stop_service(self) -> None:
