@@ -118,7 +118,7 @@ class PlayletFortuneWheel(_PluginBase):
                 "auto_cookie": self._auto_cookie,
                 "last_report": self._last_report,
                 "announce_first": self._announce_first,
-                "announce_first_content": self._announce_first or self._default_announce_first_content,
+                "announce_first_content": self._announce_first_content or self._default_announce_first_content,
                 "announce_second": self._announce_second,
                 "announce_second_content": self._announce_second_content or self._default_announce_second_content,
             })
