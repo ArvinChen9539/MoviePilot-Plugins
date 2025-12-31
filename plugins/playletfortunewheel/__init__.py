@@ -23,7 +23,7 @@ class PlayletFortuneWheel(_PluginBase):
     # 插件图标
     plugin_icon = "https://raw.githubusercontent.com/ArvinChen9539/MoviePilot-Plugins/feature-playlet-fortune-wheel/icons/PlayletFortuneWheel.png"
     # 插件版本
-    plugin_version = "1.2.0"
+    plugin_version = "1.2.1"
     # 插件作者
     plugin_author = "ArvinChen9539"
     # 作者主页
@@ -105,24 +105,23 @@ class PlayletFortuneWheel(_PluginBase):
             else:
                 self._cookie = config.get("cookie")
 
-            # 第一次安装1.2.0时更新中奖设置为默认启用,提示语也设置为默认
-            if self.plugin_version == "1.2.0":
-                self.update_config({
-                    "onlyonce": False,
-                    "cron": self._cron,
-                    "max_raffle_num": self._max_raffle_num,
-                    "enabled": self._enabled,
-                    "cookie": self._cookie,
-                    "notify": self._notify,
-                    "use_proxy": self._use_proxy,
-                    "only_free": self._only_free,
-                    "auto_cookie": self._auto_cookie,
-                    "last_report": self._last_report,
-                    "announce_first": True,
-                    "announce_first_content": self._default_announce_first_content,
-                    "announce_second": True,
-                    "announce_second_content": self._default_announce_second_content,
-                })
+            # 立即更新一次配置确保喊话内容为空时使用默认值
+            self.update_config({
+                "onlyonce": False,
+                "cron": self._cron,
+                "max_raffle_num": self._max_raffle_num,
+                "enabled": self._enabled,
+                "cookie": self._cookie,
+                "notify": self._notify,
+                "use_proxy": self._use_proxy,
+                "only_free": self._only_free,
+                "auto_cookie": self._auto_cookie,
+                "last_report": self._last_report,
+                "announce_first": self._announce_first,
+                "announce_first_content": self._announce_first or self._default_announce_first_content,
+                "announce_second": self._announce_second,
+                "announce_second_content": self._announce_second_content or self._default_announce_second_content,
+            })
 
         if self._onlyonce:
             try:
