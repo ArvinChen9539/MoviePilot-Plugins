@@ -23,7 +23,7 @@ class PlayletFortuneWheel(_PluginBase):
     # 插件图标
     plugin_icon = "https://raw.githubusercontent.com/ArvinChen9539/MoviePilot-Plugins/feature-playlet-fortune-wheel/icons/PlayletFortuneWheel.png"
     # 插件版本
-    plugin_version = "1.2.3"
+    plugin_version = "1.2.4"
     # 插件作者
     plugin_author = "ArvinChen9539"
     # 作者主页
@@ -56,6 +56,11 @@ class PlayletFortuneWheel(_PluginBase):
     _default_announce_second_content: str = "🎉🎉🎉🥈🙂"
     # 二等奖喊话内容
     _announce_second_content: str = _default_announce_second_content
+
+    # 赌鬼勋章喊话
+    _announce_medal: bool = True
+    _default_announce_medal_content: str = "🎉🎉🎉👹😱我是大赌鬼"
+    _announce_medal_content: str = _default_announce_medal_content
 
     # 保存最后一次抽奖报告
     _last_report: Optional[str] = None
@@ -97,6 +102,8 @@ class PlayletFortuneWheel(_PluginBase):
             self._announce_first_content = config.get("announce_first_content", self._default_announce_first_content)
             self._announce_second = config.get("announce_second", True)
             self._announce_second_content = config.get("announce_second_content", self._default_announce_second_content)
+            self._announce_medal = config.get("announce_medal", True)
+            self._announce_medal_content = config.get("announce_medal_content", self._default_announce_medal_content)
             self._last_report = config.get("last_report")
 
             # 处理自动获取cookie
@@ -121,6 +128,8 @@ class PlayletFortuneWheel(_PluginBase):
                 "announce_first_content": self._announce_first_content or self._default_announce_first_content,
                 "announce_second": self._announce_second,
                 "announce_second_content": self._announce_second_content or self._default_announce_second_content,
+                "announce_medal": self._announce_medal,
+                "announce_medal_content": self._announce_medal_content or self._default_announce_medal_content,
             })
 
         if self._onlyonce:
@@ -150,6 +159,8 @@ class PlayletFortuneWheel(_PluginBase):
                     "announce_first_content": self._announce_first_content,
                     "announce_second": self._announce_second,
                     "announce_second_content": self._announce_second_content,
+                    "announce_medal": self._announce_medal,
+                    "announce_medal_content": self._announce_medal_content,
                 })
 
                 # 启动任务
@@ -321,6 +332,7 @@ class PlayletFortuneWheel(_PluginBase):
             "invite_perm": "🎉",
             "invite_temp": "🎉",
             "rainbow_id": "🌈",
+            "medal": "👹"
         }
         type_name = {
             "upload": "流量",
@@ -330,7 +342,8 @@ class PlayletFortuneWheel(_PluginBase):
             "nothing": "谢谢参与",
             "invite_perm": "永久邀请",
             "invite_temp": "临时邀请",
-            "rainbow_id": "彩虹ID"
+            "rainbow_id": "彩虹ID",
+            "medal": "勋章"
         }
 
         grade_icons = {
@@ -345,7 +358,8 @@ class PlayletFortuneWheel(_PluginBase):
             "9": "🎖️",
             "10": "🎗️",
             "11": "🎗️",
-            "12": "🎗️"
+            "12": "🎗️",
+            "13": "👹",
         }
 
         # 统计数据
@@ -459,6 +473,8 @@ class PlayletFortuneWheel(_PluginBase):
         _is_first_win = False
         # 是否中二等奖
         _is_second_win = False
+        # 是否中大赌鬼勋章
+        _is_medal_win = False
         for grade, count in sorted_grades:
             grade_num = re.search(r'(\d+)等奖', grade)
             if grade_num:
@@ -469,6 +485,8 @@ class PlayletFortuneWheel(_PluginBase):
                     _is_first_win = True
                 elif grade_key == "2":
                     _is_second_win = True
+                elif grade_key == "13":
+                    _is_medal_win = True
             else:
                 icon = "❓"
             results.append(f"  {icon} {grade}: {count}次")
@@ -512,6 +530,13 @@ class PlayletFortuneWheel(_PluginBase):
                 self._site_url + "/shoutbox.php?shbox_text=" + self._announce_second_content + "&shout=%E6%88%91%E5%96%8A&sent=yes&type=shoutbox",
                 headers=self.headers, proxies=self._get_proxies())
 
+        if _is_medal_win and self._announce_medal and self._announce_medal_content:
+            requests.get(
+                self._site_url + "/shoutbox.php?shbox_text=" + self._announce_medal_content + "&shout=%E6%88%91%E5%96%8A&sent=yes&type=shoutbox",
+                headers=self.headers, proxies=self._get_proxies())
+            # 在数组顶部插入一条赌鬼勋章中奖的提示
+            results.insert(0, "👹👹👹我是大赌鬼👹👹👹")
+
         return results
 
     def _auto_task(self):
@@ -548,6 +573,8 @@ class PlayletFortuneWheel(_PluginBase):
                     "announce_first_content": self._announce_first_content,
                     "announce_second": self._announce_second,
                     "announce_second_content": self._announce_second_content,
+                    "announce_medal": self._announce_medal,
+                    "announce_medal_content": self._announce_medal_content,
                 })
                 logger.info(f"🎮【Playlet幸运转盘】抽奖报告")
                 logger.info(f"{report}")
@@ -1100,6 +1127,50 @@ class PlayletFortuneWheel(_PluginBase):
                                             },
                                         ]
                                     },
+                                    {
+                                        'component': 'VRow',
+                                        'content': [
+                                            {
+                                                'component': 'VCol',
+                                                'props': {
+                                                    'cols': 12,
+                                                    'sm': 3,
+                                                    'class': 'd-flex align-sm-center'
+                                                },
+                                                'content': [
+                                                    {
+                                                        'component': 'VSwitch',
+                                                        'props': {
+                                                            'model': 'announce_second',
+                                                            'label': '赌鬼勋章喊话',
+                                                            'color': 'primary',
+                                                            'hide-details': True
+                                                        }
+                                                    }
+                                                ]
+                                            },
+                                            {
+                                                'component': 'VCol',
+                                                'props': {
+                                                    'cols': 12,
+                                                    'sm': 9
+                                                },
+                                                'content': [
+                                                    {
+                                                        'component': 'VTextField',
+                                                        'props': {
+                                                            'model': 'announce_second_content',
+                                                            'label': '喊话内容',
+                                                            'variant': 'outlined',
+                                                            'color': 'primary',
+                                                            'hide-details': True,
+                                                            'class': 'mt-2 w-full',
+                                                        }
+                                                    }
+                                                ]
+                                            },
+                                        ]
+                                    },
                                 ]
                             }
                         ]
@@ -1190,6 +1261,8 @@ class PlayletFortuneWheel(_PluginBase):
             "announce_first_content": self._default_announce_first_content,
             "announce_second": True,
             "announce_second_content": self._default_announce_second_content,
+            "announce_medal": True,
+            "announce_medal_content": self._default_announce_medal_content,
         }
 
     def stop_service(self) -> None:
