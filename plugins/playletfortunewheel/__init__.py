@@ -23,7 +23,7 @@ class PlayletFortuneWheel(_PluginBase):
     # 插件图标
     plugin_icon = "https://raw.githubusercontent.com/ArvinChen9539/MoviePilot-Plugins/feature-playlet-fortune-wheel/icons/PlayletFortuneWheel.png"
     # 插件版本
-    plugin_version = "1.2.4"
+    plugin_version = "1.2.5"
     # 插件作者
     plugin_author = "ArvinChen9539"
     # 作者主页
@@ -1141,7 +1141,7 @@ class PlayletFortuneWheel(_PluginBase):
                                                     {
                                                         'component': 'VSwitch',
                                                         'props': {
-                                                            'model': 'announce_second',
+                                                            'model': 'announce_medal',
                                                             'label': '赌鬼勋章喊话',
                                                             'color': 'primary',
                                                             'hide-details': True
@@ -1159,7 +1159,7 @@ class PlayletFortuneWheel(_PluginBase):
                                                     {
                                                         'component': 'VTextField',
                                                         'props': {
-                                                            'model': 'announce_second_content',
+                                                            'model': 'announce_medal_content',
                                                             'label': '喊话内容',
                                                             'variant': 'outlined',
                                                             'color': 'primary',
