@@ -23,7 +23,7 @@ class PlayletFortuneWheel(_PluginBase):
     # 插件图标
     plugin_icon = "https://raw.githubusercontent.com/ArvinChen9539/MoviePilot-Plugins/feature-playlet-fortune-wheel/icons/PlayletFortuneWheel.png"
     # 插件版本
-    plugin_version = "1.2.1"
+    plugin_version = "1.2.2"
     # 插件作者
     plugin_author = "ArvinChen9539"
     # 作者主页
@@ -532,7 +532,7 @@ class PlayletFortuneWheel(_PluginBase):
                 if self._notify:
                     self.post_message(
                         mtype=NotificationType.SiteMessage,
-                        title="【Playlet幸运转盘】每日任务完成",
+                        title="🎮【Playlet幸运转盘】抽奖报告",
                         text=report)
                 self._last_report = report
                 self.update_config({
@@ -569,15 +569,15 @@ class PlayletFortuneWheel(_PluginBase):
             if not results:
                 return "ℹ️ 没有抽奖次数"
 
+            # 添加时间戳
+            report += f"\n\n⏱️ 抽奖时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
             # 生成报告
-            report = "🎮 Playlet幸运转盘抽奖报告\n"
             report += "━━━━━━━━━━━━━━\n"
 
             # 添加抽奖结果
             report += "\n".join(results)
 
-            # 添加时间戳
-            report += f"\n\n⏱️ 抽奖时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+
 
             return report
 
