@@ -23,7 +23,7 @@ class PlayletFortuneWheel(_PluginBase):
     # 插件图标
     plugin_icon = "https://raw.githubusercontent.com/ArvinChen9539/MoviePilot-Plugins/feature-playlet-fortune-wheel/icons/PlayletFortuneWheel.png"
     # 插件版本
-    plugin_version = "1.2.2"
+    plugin_version = "1.2.3"
     # 插件作者
     plugin_author = "ArvinChen9539"
     # 作者主页
@@ -235,7 +235,6 @@ class PlayletFortuneWheel(_PluginBase):
 
                 # 解析返回结果
                 try:
-                    logger.info(f"执行抽奖次数{num}")
                     response = requests.post(raffle_url, headers=self.headers, files={"count": (None, num)},
                                              proxies=proxies)
                     response_json = response.json()
@@ -253,7 +252,6 @@ class PlayletFortuneWheel(_PluginBase):
                     # 累积结果
                     all_results.extend(response_json["results"])
                     exec_count -= num
-                    logger.info(f"抽奖成功")
                 except Exception as e:
                     logger.error(f"转换接口返回数据时异常: {str(e)}", e)
                     error_num += 1
@@ -551,7 +549,8 @@ class PlayletFortuneWheel(_PluginBase):
                     "announce_second": self._announce_second,
                     "announce_second_content": self._announce_second_content,
                 })
-                logger.info(f"每日抽奖任务完成")
+                logger.info(f"🎮【Playlet幸运转盘】抽奖报告")
+                logger.info(f"{report}")
             else:
                 logger.info("未抽奖，不发送通知")
 
