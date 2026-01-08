@@ -23,7 +23,7 @@ class PlayletFortuneWheel(_PluginBase):
     # 插件图标
     plugin_icon = "https://raw.githubusercontent.com/ArvinChen9539/MoviePilot-Plugins/feature-playlet-fortune-wheel/icons/PlayletFortuneWheel.png"
     # 插件版本
-    plugin_version = "1.2.5"
+    plugin_version = "1.2.6"
     # 插件作者
     plugin_author = "ArvinChen9539"
     # 作者主页
@@ -263,6 +263,7 @@ class PlayletFortuneWheel(_PluginBase):
                     # 累积结果
                     all_results.extend(response_json["results"])
                     exec_count -= num
+                    logger.info(f"抽奖成功,次数消耗{num}")
                 except Exception as e:
                     logger.error(f"转换接口返回数据时异常: {str(e)}", e)
                     error_num += 1
@@ -439,6 +440,7 @@ class PlayletFortuneWheel(_PluginBase):
         else:
             results.append(f"📉 净亏魔力: {self.format_num(abs(net_bonus))}")
 
+        results.append("\n")
         # 根据盈亏情况添加提示语
         if total_bonus_cost > 0:  # 有消耗才计算盈亏比例
             profit_ratio = total_bonus_earned / total_bonus_cost if total_bonus_cost > 0 else 0
@@ -450,12 +452,12 @@ class PlayletFortuneWheel(_PluginBase):
                 results.append("🙂 回本万岁！至少没亏钱！")
             elif profit_ratio >= 0.5:
                 results.append("😐 亏得不多，就当花钱娱乐了！")
+            elif profit_ratio == 0:
+                results.append("💸 全部亏光！这波亏麻了！")
             else:
                 results.append("😢 亏得有点多，建议见好就收！")
         elif total_bonus_earned > 0:
             results.append("🎊 全是白赚！血赚不亏！")
-        elif total_bonus_cost > 0:
-            results.append("💸 全部亏光！这波亏麻了！")
         else:
             results.append("😐 今天无事发生，既没赚也没亏！")
 
@@ -555,7 +557,7 @@ class PlayletFortuneWheel(_PluginBase):
                 if self._notify:
                     self.post_message(
                         mtype=NotificationType.SiteMessage,
-                        title="🎮【Playlet幸运转盘】抽奖报告",
+                        title="【Playlet幸运转盘】每日任务完成",
                         text=report)
                 self._last_report = report
                 self.update_config({
@@ -576,8 +578,10 @@ class PlayletFortuneWheel(_PluginBase):
                     "announce_medal": self._announce_medal,
                     "announce_medal_content": self._announce_medal_content,
                 })
-                logger.info(f"🎮【Playlet幸运转盘】抽奖报告")
-                logger.info(f"{report}")
+                # 按照\n 分割,然后倒叙再拼接回去
+                log_report = "\n".join(reversed(report.split("\n")))
+                logger.info(
+                    f"报告请点击左上【在新窗口中打开】查看\n\n==============================================\n{log_report}\n==============================================\n\n")
             else:
                 logger.info("未抽奖，不发送通知")
 
@@ -595,15 +599,15 @@ class PlayletFortuneWheel(_PluginBase):
             if not results:
                 return "ℹ️ 没有抽奖次数"
 
+            # 初始化report变量
+            report = "🎮 Playlet幸运转盘抽奖报告\n"
             # 添加时间戳
-            report += f"\n\n⏱️ 抽奖时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+            report += f"⏱️ 抽奖时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
             # 生成报告
             report += "━━━━━━━━━━━━━━\n"
 
             # 添加抽奖结果
             report += "\n".join(results)
-
-
 
             return report
 
