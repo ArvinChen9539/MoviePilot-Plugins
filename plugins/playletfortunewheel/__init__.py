@@ -23,7 +23,7 @@ class PlayletFortuneWheel(_PluginBase):
     # 插件图标
     plugin_icon = "https://raw.githubusercontent.com/ArvinChen9539/MoviePilot-Plugins/feature-playlet-fortune-wheel/icons/PlayletFortuneWheel.png"
     # 插件版本
-    plugin_version = "1.2.6"
+    plugin_version = "1.2.7"
     # 插件作者
     plugin_author = "ArvinChen9539"
     # 作者主页
@@ -440,7 +440,9 @@ class PlayletFortuneWheel(_PluginBase):
         else:
             results.append(f"📉 净亏魔力: {self.format_num(abs(net_bonus))}")
 
-        results.append("\n")
+        # 添加分隔线
+        results.append("─" * 20)
+
         # 根据盈亏情况添加提示语
         if total_bonus_cost > 0:  # 有消耗才计算盈亏比例
             profit_ratio = total_bonus_earned / total_bonus_cost if total_bonus_cost > 0 else 0
@@ -547,7 +549,7 @@ class PlayletFortuneWheel(_PluginBase):
         """
         try:
             logger.info("执行每日自动抽奖")
-            results = self.exec_raffle()  # 免费次数
+            results = self.exec_raffle()
 
             # 生成报告
             if results:
