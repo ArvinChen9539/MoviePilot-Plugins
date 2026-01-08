@@ -1,0 +1,223 @@
+{
+  "success": true,
+  "results": [
+    {
+      "prize": {
+        "id": "128",
+        "name": "谢谢参与"
+      },
+      "result": {
+        "status": "nothing"
+      },
+      "grade": "12等奖"
+    },
+    {
+      "prize": {
+        "id": "128",
+        "name": "谢谢参与"
+      },
+      "result": {
+        "status": "nothing"
+      },
+      "grade": "12等奖"
+    },
+    {
+      "prize": {
+        "id": "128",
+        "name": "谢谢参与"
+      },
+      "result": {
+        "status": "nothing"
+      },
+      "grade": "12等奖"
+    },
+    {
+      "prize": {
+        "id": "128",
+        "name": "谢谢参与"
+      },
+      "result": {
+        "status": "nothing"
+      },
+      "grade": "12等奖"
+    },
+    {
+      "prize": {
+        "id": "128",
+        "name": "谢谢参与"
+      },
+      "result": {
+        "status": "nothing"
+      },
+      "grade": "12等奖"
+    },
+    {
+      "prize": {
+        "id": "128",
+        "name": "谢谢参与"
+      },
+      "result": {
+        "status": "nothing"
+      },
+      "grade": "12等奖"
+    },
+    {
+      "prize": {
+        "id": "128",
+        "name": "谢谢参与"
+      },
+      "result": {
+        "status": "nothing"
+      },
+      "grade": "12等奖"
+    },
+    {
+      "prize": {
+        "id": "127",
+        "name": "补签卡*1"
+      },
+      "result": {
+        "status": "awarded",
+        "type": "attendance_card",
+        "value": 1,
+        "unit": "张补签卡"
+      },
+      "grade": "11等奖"
+    },
+    {
+      "prize": {
+        "id": "124",
+        "name": "上传量1G"
+      },
+      "result": {
+        "status": "awarded",
+        "type": "upload",
+        "value": 1,
+        "unit": "GB上传量"
+      },
+      "grade": "8等奖"
+    },
+    {
+      "prize": {
+        "id": "126",
+        "name": "魔力0.1W"
+      },
+      "result": {
+        "status": "awarded",
+        "type": "bonus",
+        "value": 1000,
+        "unit": "魔力值"
+      },
+      "grade": "10等奖"
+    },
+    {
+      "prize": {
+        "id": "128",
+        "name": "谢谢参与"
+      },
+      "result": {
+        "status": "nothing"
+      },
+      "grade": "12等奖"
+    },
+    {
+      "prize": {
+        "id": "126",
+        "name": "魔力0.1W"
+      },
+      "result": {
+        "status": "awarded",
+        "type": "bonus",
+        "value": 1000,
+        "unit": "魔力值"
+      },
+      "grade": "10等奖"
+    },
+    {
+      "prize": {
+        "id": "128",
+        "name": "谢谢参与"
+      },
+      "result": {
+        "status": "nothing"
+      },
+      "grade": "12等奖"
+    },
+    {
+      "prize": {
+        "id": "128",
+        "name": "谢谢参与"
+      },
+      "result": {
+        "status": "nothing"
+      },
+      "grade": "12等奖"
+    },
+    {
+      "prize": {
+        "id": "128",
+        "name": "谢谢参与"
+      },
+      "result": {
+        "status": "nothing"
+      },
+      "grade": "12等奖"
+    },
+    {
+      "prize": {
+        "id": "125",
+        "name": "魔力1W"
+      },
+      "result": {
+        "status": "awarded",
+        "type": "bonus",
+        "value": 10000,
+        "unit": "魔力值"
+      },
+      "grade": "9等奖"
+    },
+    {
+      "prize": {
+        "id": "126",
+        "name": "魔力0.1W"
+      },
+      "result": {
+        "status": "awarded",
+        "type": "bonus",
+        "value": 1000,
+        "unit": "魔力值"
+      },
+      "grade": "10等奖"
+    },
+    {
+      "prize": {
+        "id": "128",
+        "name": "谢谢参与"
+      },
+      "result": {
+        "status": "nothing"
+      },
+      "grade": "12等奖"
+    },
+    {
+      "prize": {
+        "id": "128",
+        "name": "谢谢参与"
+      },
+      "result": {
+        "status": "nothing"
+      },
+      "grade": "12等奖"
+    },
+    {
+      "prize": {
+        "id": "128",
+        "name": "谢谢参与"
+      },
+      "result": {
+        "status": "nothing"
+      },
+      "grade": "12等奖"
+    }
+  ]
+}
