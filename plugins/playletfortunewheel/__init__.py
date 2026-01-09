@@ -473,6 +473,8 @@ class PlayletFortuneWheel(_PluginBase):
                                key=lambda x: int(re.search(r'(\d+)等奖', x[0]).group(1)) if re.search(r'(\d+)等奖',
                                                                                                       x[0]) else 99)
 
+        # 合并多次中奖喊话内容
+        shoutbox_str_list = []
         for grade, count in sorted_grades:
             grade_num = re.search(r'(\d+)等奖', grade)
             if grade_num:
@@ -482,23 +484,26 @@ class PlayletFortuneWheel(_PluginBase):
                 # 是否中一等奖
                 if grade_key == "1":
                     if self._announce_first and self._announce_first_content:
-                        self.shoutbox(self._announce_first_content + ("" if count == 1 else "X" + str(count)))
+                        shoutbox_str_list.append(self._announce_first_content + (" " if count == 1 else " X" + str(count)))
 
                 # 是否中二等奖
                 elif grade_key == "2":
                     if self._announce_second and self._announce_second_content:
-                        self.shoutbox(self._announce_second_content + ("" if count == 1 else "X" + str(count)))
+                        shoutbox_str_list.append(self._announce_second_content + (" " if count == 1 else " X" + str(count)))
 
                 # 是否中大赌鬼勋章
                 elif grade_key == "13":
                     if self._announce_medal and self._announce_medal_content:
-                        self.shoutbox(self._announce_medal_content + ("" if count == 1 else "X" + str(count)))
+                        shoutbox_str_list.append(self._announce_medal_content + (" " if count == 1 else " X" + str(count)))
                         # 在数组顶部插入一条赌鬼勋章中奖的提示
                         results.insert(0, "👹👹👹我是大赌鬼👹👹👹")
 
             else:
                 icon = "❓"
             results.append(f"  {icon} {grade}: {count}次")
+
+        if shoutbox_str_list:
+            self.shoutbox(" | ".join(shoutbox_str_list))
 
         # 添加分隔线
         results.append("─" * 14)
@@ -525,8 +530,9 @@ class PlayletFortuneWheel(_PluginBase):
 
         return results
 
-    # 发送喊话
+    # 发送喊话(注意合并一次,可能因为频繁而失败)
     def shoutbox(self,text: str):
+        logger.info("发送喊话内容: %s", text)
         self.headers = {
             "cookie": self.clean_cookie_value(self._cookie),
             "referer": self._site_url,
