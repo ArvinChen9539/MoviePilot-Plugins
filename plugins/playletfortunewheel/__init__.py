@@ -23,7 +23,7 @@ class PlayletFortuneWheel(_PluginBase):
     # 插件图标
     plugin_icon = "https://raw.githubusercontent.com/ArvinChen9539/MoviePilot-Plugins/feature-playlet-fortune-wheel/icons/PlayletFortuneWheel.png"
     # 插件版本
-    plugin_version = "1.2.8"
+    plugin_version = "1.2.9"
     # 插件作者
     plugin_author = "ArvinChen9539"
     # 作者主页
@@ -401,11 +401,11 @@ class PlayletFortuneWheel(_PluginBase):
                 value = result.get("value", 0)
                 # 确保value是数值类型
                 try:
-                    value = int(value) if value is not None else 0
+                    value = int(value) if value is not None else 1
                 except (ValueError, TypeError):
-                    logger.error(f"转换接口返回数据时异常: 值{value}不是有效的数字,已设置为0")
+                    logger.error(f"转换接口返回数据时异常: 值{value}不是有效的数字,已设置为1")
                     logger.error(f"接口返回数据: {item}")
-                    value = 0
+                    value = 1
                 unit = result.get("unit", "")
                 detail_key = f"{prize_name} ({unit})"
 
