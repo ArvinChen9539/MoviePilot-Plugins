@@ -23,7 +23,7 @@ class PlayletFortuneWheel(_PluginBase):
     # 插件图标
     plugin_icon = "https://raw.githubusercontent.com/ArvinChen9539/MoviePilot-Plugins/feature-playlet-fortune-wheel/icons/PlayletFortuneWheel.png"
     # 插件版本
-    plugin_version = "1.2.7"
+    plugin_version = "1.2.8"
     # 插件作者
     plugin_author = "ArvinChen9539"
     # 作者主页
@@ -431,13 +431,13 @@ class PlayletFortuneWheel(_PluginBase):
         net_bonus = total_bonus_earned - total_bonus_cost
 
         # 生成报告
-        results.append(f"🎰 总抽奖次数: {total_count}")
+        results.append(f"🎰 抽奖次数: {total_count}")
         results.append(f"🎯 中奖次数: {win_count}")
         results.append(f"💔 谢谢参与: {total_count - win_count}")
 
         if win_count > 0:
             win_rate = (win_count / total_count) * 100
-            results.append(f"📊 中奖率: {win_rate:.1f}%")
+            results.append(f"📊 中奖概率: {win_rate:.1f}%")
 
         # 添加魔力统计
         results.append(f"💰 消耗魔力: {self.format_num(total_bonus_cost)}")
@@ -610,7 +610,7 @@ class PlayletFortuneWheel(_PluginBase):
             # 初始化report变量
             report = "🎮 Playlet幸运转盘抽奖报告\n"
             # 添加时间戳
-            report += f"⏱️ 抽奖时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+            report += f"⏱️ {datetime.now().strftime('%Y-%m-%d %H:%M')}\n"
             # 生成报告
             report += "━━━━━━━━━━━━━━\n"
 
