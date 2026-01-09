@@ -399,6 +399,13 @@ class PlayletFortuneWheel(_PluginBase):
             # 统计具体奖励详情
             if status != "nothing":
                 value = result.get("value", 0)
+                # 确保value是数值类型
+                try:
+                    value = int(value) if value is not None else 0
+                except (ValueError, TypeError):
+                    logger.error(f"转换接口返回数据时异常: 值{value}不是有效的数字,已设置为0")
+                    logger.error(f"接口返回数据: {item}")
+                    value = 0
                 unit = result.get("unit", "")
                 detail_key = f"{prize_name} ({unit})"
 
