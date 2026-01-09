@@ -441,7 +441,7 @@ class PlayletFortuneWheel(_PluginBase):
             results.append(f"📉 净亏魔力: {self.format_num(abs(net_bonus))}")
 
         # 添加分隔线
-        results.append("─" * 20)
+        results.append("─" * 14)
 
         # 根据盈亏情况添加提示语
         if total_bonus_cost > 0:  # 有消耗才计算盈亏比例
@@ -464,7 +464,7 @@ class PlayletFortuneWheel(_PluginBase):
             results.append("😐 今天无事发生，既没赚也没亏！")
 
         # 添加分隔线
-        results.append("─" * 20)
+        results.append("─" * 14)
 
         # 等级分布统计
         results.append("🏅 等级分布:")
@@ -473,30 +473,35 @@ class PlayletFortuneWheel(_PluginBase):
                                key=lambda x: int(re.search(r'(\d+)等奖', x[0]).group(1)) if re.search(r'(\d+)等奖',
                                                                                                       x[0]) else 99)
 
-        # 是否中一等奖
-        _is_first_win = False
-        # 是否中二等奖
-        _is_second_win = False
-        # 是否中大赌鬼勋章
-        _is_medal_win = False
         for grade, count in sorted_grades:
             grade_num = re.search(r'(\d+)等奖', grade)
             if grade_num:
                 grade_key = grade_num.group(1)
                 icon = grade_icons.get(grade_key, "🎗️")
 
+                # 是否中一等奖
                 if grade_key == "1":
-                    _is_first_win = True
+                    if self._announce_first and self._announce_first_content:
+                        self.shoutbox(self._announce_first_content + ("" if count == 1 else "X" + str(count)))
+
+                # 是否中二等奖
                 elif grade_key == "2":
-                    _is_second_win = True
+                    if self._announce_second and self._announce_second_content:
+                        self.shoutbox(self._announce_second_content + ("" if count == 1 else "X" + str(count)))
+
+                # 是否中大赌鬼勋章
                 elif grade_key == "13":
-                    _is_medal_win = True
+                    if self._announce_medal and self._announce_medal_content:
+                        self.shoutbox(self._announce_medal_content + ("" if count == 1 else "X" + str(count)))
+                        # 在数组顶部插入一条赌鬼勋章中奖的提示
+                        results.insert(0, "👹👹👹我是大赌鬼👹👹👹")
+
             else:
                 icon = "❓"
             results.append(f"  {icon} {grade}: {count}次")
 
         # 添加分隔线
-        results.append("─" * 20)
+        results.append("─" * 14)
 
         # 按奖励类型展示详情
         results.append("🏆 奖励详情:")
@@ -518,30 +523,18 @@ class PlayletFortuneWheel(_PluginBase):
 
             results.append("")
 
-        # 发送喊话
+        return results
+
+    # 发送喊话
+    def shoutbox(self,text: str):
         self.headers = {
             "cookie": self.clean_cookie_value(self._cookie),
             "referer": self._site_url,
             "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36 Edg/132.0.0.0"
         }
-        if _is_first_win and self._announce_first and self._announce_first_content:
-            requests.get(
-                self._site_url + "/shoutbox.php?shbox_text=" + self._announce_first_content + "&shout=%E6%88%91%E5%96%8A&sent=yes&type=shoutbox",
-                headers=self.headers, proxies=self._get_proxies())
-
-        if _is_second_win and self._announce_second and self._announce_second_content:
-            requests.get(
-                self._site_url + "/shoutbox.php?shbox_text=" + self._announce_second_content + "&shout=%E6%88%91%E5%96%8A&sent=yes&type=shoutbox",
-                headers=self.headers, proxies=self._get_proxies())
-
-        if _is_medal_win and self._announce_medal and self._announce_medal_content:
-            requests.get(
-                self._site_url + "/shoutbox.php?shbox_text=" + self._announce_medal_content + "&shout=%E6%88%91%E5%96%8A&sent=yes&type=shoutbox",
-                headers=self.headers, proxies=self._get_proxies())
-            # 在数组顶部插入一条赌鬼勋章中奖的提示
-            results.insert(0, "👹👹👹我是大赌鬼👹👹👹")
-
-        return results
+        requests.get(
+            self._site_url + "/shoutbox.php?shbox_text=" + text + "&shout=%E6%88%91%E5%96%8A&sent=yes&type=shoutbox",
+            headers=self.headers, proxies=self._get_proxies())
 
     def _auto_task(self):
         """
