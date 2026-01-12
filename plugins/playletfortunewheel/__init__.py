@@ -406,7 +406,7 @@ class PlayletFortuneWheel(_PluginBase):
                     logger.error(f"转换接口返回数据时异常: 值{value}不是有效的数字,已设置为1")
                     logger.error(f"接口返回数据: {item}")
                     value = 1
-                unit = result.get("unit", "")
+                unit = result.get("unit", "未知")
                 detail_key = f"{prize_name} ({unit})"
 
                 if detail_key not in prize_stats[prize_type]["details"]:
