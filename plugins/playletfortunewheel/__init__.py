@@ -690,8 +690,22 @@ class PlayletFortuneWheel(_PluginBase):
         pass
 
     def get_api(self) -> List[Dict[str, Any]]:
-        """获取API"""
-        pass
+        logger.info(settings.API_TOKEN)
+        """
+        获取插件API
+        """
+        return [{
+            "path": "/isEnableAdvancedAuth",
+            "endpoint": self._is_enable_advanced_auth,
+            "methods": ["GET"],
+            "summary": "用户站点数据验证",
+            "description": "验证用户是否可以开启高级验证功能",
+        }]
+
+    # 是否支持开启高级功能(暂时定位数据上传)
+    def _is_enable_advanced_auth(self) -> bool:
+        logger.info("获取用户站点保种数据,假设体积超过5T")
+        return False
 
     def get_page(self) -> List[dict]:
         """数据页面"""
