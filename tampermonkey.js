@@ -531,7 +531,7 @@
             const count = stat.count;
             const typeName = TYPE_NAME[prizeType] || prizeType.toUpperCase();
             
-            results.push(`  ${icon} ${typeName} 类奖励 ({${count}}次)`);
+            results.push(`  ${icon} ${typeName} 类奖励 (${count}次)`);
             
             for (const [detail, info] of Object.entries(stat.details)) {
                 let totalVal = info.total_value;
