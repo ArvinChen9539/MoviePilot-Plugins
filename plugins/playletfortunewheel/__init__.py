@@ -582,7 +582,7 @@ class PlayletFortuneWheel(_PluginBase):
             return
 
         try:
-            logger.info("开始上报抽奖数据...")
+            logger.info("已认证,开始上报抽奖数据...")
             
             # 构造上报数据
             report_data = {
@@ -787,7 +787,6 @@ class PlayletFortuneWheel(_PluginBase):
             logger.warning("未配置Cookie，无法获取用户名")
             return ""
         try:
-            logger.info("开始从站点获取用户名...")
             headers = {
                 "cookie": self.clean_cookie_value(self._cookie),
                 "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
@@ -803,7 +802,6 @@ class PlayletFortuneWheel(_PluginBase):
                 
                 if match:
                     username = re.sub(r'<[^>]+>', '', match.group(1)).strip()
-                    logger.info(f"成功获取用户名: {username}")
                     return username
                 else:
                     logger.warning("无法从页面解析出用户名，请检查Cookie是否失效或页面结构变更")
