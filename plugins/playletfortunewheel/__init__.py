@@ -300,13 +300,13 @@ class PlayletFortuneWheel(_PluginBase):
 
     # 数值大于1W时显示为*W
     def format_num(self, num: int):
-        if num >= 10000:
-            result = num / 10000
+        abs_num = abs(num)
+        if abs_num >= 10000:
+            result = abs_num / 10000
             # 如果结果是整数，则显示为整数，否则保留一位小数
-            if result.is_integer():
-                return f"{int(result)}W"
-            else:
-                return f"{result:.1f}W"
+            suffix = "W"
+            formatted = f"{int(result)}" if result.is_integer() else f"{result:.1f}"
+            return f"{'-' if num < 0 else ''}{formatted}{suffix}"
         return str(num)
 
     def process_raffle_results(self, response_data: dict, free_count: int = 0) -> Tuple[List[str], Dict[str, int]]:
@@ -581,11 +581,6 @@ class PlayletFortuneWheel(_PluginBase):
             logger.info("未配置后端地址或Token，跳过上报")
             return
 
-        # 检查Token格式，只有 username:token 格式才上报， username: 格式为未认证
-        if ":" not in self._auth_token or self._auth_token.endswith(":"):
-            logger.info("未认证状态，跳过上报")
-            return
-
         try:
             logger.info("开始上报抽奖数据...")
             
@@ -842,7 +837,6 @@ class PlayletFortuneWheel(_PluginBase):
             def call_backend(endpoint, key):
                 try:
                     url = f"{self._backend_url.rstrip('/')}{endpoint}"
-                    logger.info(f"请求后端接口: {url}")
                     r = requests.get(url, headers={"X-API-Key": key}, timeout=5)
                     try:
                         return r.status_code, r.json()
@@ -853,15 +847,13 @@ class PlayletFortuneWheel(_PluginBase):
                     return 500, {"message": str(e)}
     
             # 1. 尝试使用现有Token获取数据
-            if token:
-                logger.info(f"尝试使用现有Token获取数据: {token[:6]}***")
+            if token:               
                 status, data = call_backend("/prize-records/month-top", f"{username}:{token}")
                 if status == 200:
                     # 检查是否是数据对象 (month-top 返回 object)
                     if isinstance(data, dict) and ("loss_top" in data or "gain_top" in data):
                         is_authenticated = True
                         month_data = data
-                        logger.info("Token验证成功，获取月榜数据成功")
                         # 获取日榜
                         _, day_data = call_backend("/prize-records/day-top", f"{username}:{token}")
                     else:
