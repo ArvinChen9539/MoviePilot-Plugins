@@ -23,7 +23,7 @@ class PlayletFortuneWheel(_PluginBase):
     # 插件图标
     plugin_icon = "https://raw.githubusercontent.com/ArvinChen9539/MoviePilot-Plugins/feature-playlet-fortune-wheel/icons/PlayletFortuneWheel.png"
     # 插件版本
-    plugin_version = "1.2.9"
+    plugin_version = "2.0.1"
     # 插件作者
     plugin_author = "ArvinChen9539"
     # 作者主页
@@ -65,6 +65,11 @@ class PlayletFortuneWheel(_PluginBase):
     # 保存最后一次抽奖报告
     _last_report: Optional[str] = None
 
+    # 后端地址
+    _backend_url: str = "https://fortune-wheel-share-data.jing999.de5.net"
+    # 认证Token
+    _auth_token: Optional[str] = None
+
     # 参数
     _cookie: Optional[str] = None
     _cron: Optional[str] = None
@@ -77,6 +82,17 @@ class PlayletFortuneWheel(_PluginBase):
 
     # 站点操作实例
     _siteoper = None
+
+    def get_render_mode(self) -> Tuple[str, str]:
+        """
+        获取插件渲染模式
+        :return: 1、渲染模式，支持：vue/vuetify，默认vuetify
+        :return: 2、组件路径，默认 dist/assets
+        """
+        return "vue", "dist/assets"
+
+    def get_dashboard(self) -> Tuple[str, str]:
+        return None
 
     def init_plugin(self, config: Optional[dict] = None) -> None:
         """
@@ -105,6 +121,8 @@ class PlayletFortuneWheel(_PluginBase):
             self._announce_medal = config.get("announce_medal", True)
             self._announce_medal_content = config.get("announce_medal_content", self._default_announce_medal_content)
             self._last_report = config.get("last_report")
+            self._backend_url = config.get("backend_url", "https://fortune-wheel-share-data.jing999.de5.net")
+            self._auth_token = config.get("auth_token")
 
             # 处理自动获取cookie
             if self._auto_cookie:
@@ -130,6 +148,8 @@ class PlayletFortuneWheel(_PluginBase):
                 "announce_second_content": self._announce_second_content or self._default_announce_second_content,
                 "announce_medal": self._announce_medal,
                 "announce_medal_content": self._announce_medal_content or self._default_announce_medal_content,
+                "backend_url": self._backend_url,
+                "auth_token": self._auth_token,
             })
 
         if self._onlyonce:
@@ -161,6 +181,8 @@ class PlayletFortuneWheel(_PluginBase):
                     "announce_second_content": self._announce_second_content,
                     "announce_medal": self._announce_medal,
                     "announce_medal_content": self._announce_medal_content,
+                    "backend_url": self._backend_url,
+                    "auth_token": self._auth_token,
                 })
 
                 # 启动任务
@@ -192,6 +214,7 @@ class PlayletFortuneWheel(_PluginBase):
         }
 
         results = []
+        stats = {} # 用于存储统计数据
 
         # 获取代理设置
         proxies = self._get_proxies()
@@ -211,7 +234,7 @@ class PlayletFortuneWheel(_PluginBase):
 
         if not today_num_str:
             logger.error(f"登录异常")
-            return results
+            return results, stats
         # 将today_num_str 拆分成今日次数和已用次数两个数字变量 字符串的格式为 "今日次数 / 已用次数"
         used_count, today_count = map(int, today_num_str.split("/"))
         # 今日剩余次数
@@ -253,12 +276,12 @@ class PlayletFortuneWheel(_PluginBase):
                     if not flag:
                         logger.error(f"抽奖失败: {str(response_json)}")
                         error_msg = response_json.get("message", "未知错误")
-                        results = self.process_raffle_results({"success": True, "results": all_results}, free_count)
+                        results, stats = self.process_raffle_results({"success": True, "results": all_results}, free_count)
                         results.append("")
                         results.append(f"❌ 抽奖失败: {error_msg}")
                         results.append("")
                         results.append(f"🎯 剩余次数: {remain_count - len(all_results)}")
-                        return results
+                        return results, stats
 
                     # 累积结果
                     all_results.extend(response_json["results"])
@@ -269,48 +292,54 @@ class PlayletFortuneWheel(_PluginBase):
                     error_num += 1
                     if error_num > 5:
                         logger.error(f"抽奖异常次数过多，停止执行")
-                        results = self.process_raffle_results({"success": True, "results": all_results}, free_count)
+                        results, stats = self.process_raffle_results({"success": True, "results": all_results}, free_count)
                         results.append("")
                         results.append(f"❌ 抽奖异常: {str(e)}")
                         results.append("")
                         results.append(f"🎯 剩余次数: {remain_count - len(all_results)}")
-                        return results
+                        return results, stats
                     logger.error(f"抽奖异常次数: {str(error_num)}，继续执行")
                 # 间隔5秒后执行（降低抽奖频率）
                 time.sleep(5)
 
-            results = self.process_raffle_results({"success": True, "results": all_results}, free_count)
+            results, stats = self.process_raffle_results({"success": True, "results": all_results}, free_count)
 
         else:
             logger.info(f"抽奖次数已用完")
 
-        return results
+        return results, stats
 
     # 数值大于1W时显示为*W
     def format_num(self, num: int):
-        if num >= 10000:
-            result = num / 10000
+        abs_num = abs(num)
+        if abs_num >= 10000:
+            result = abs_num / 10000
             # 如果结果是整数，则显示为整数，否则保留一位小数
-            if result.is_integer():
-                return f"{int(result)}W"
-            else:
-                return f"{result:.1f}W"
+            suffix = "W"
+            formatted = f"{int(result)}" if result.is_integer() else f"{result:.1f}"
+            return f"{'-' if num < 0 else ''}{formatted}{suffix}"
         return str(num)
 
-    def process_raffle_results(self, response_data: dict, free_count: int = 0) -> List[str]:
+    def process_raffle_results(self, response_data: dict, free_count: int = 0) -> Tuple[List[str], Dict[str, int]]:
         results = []
+        stats = {
+            "magic_gain": 0,
+            "magic_loss": 0,
+            "first_prize_count": 0,
+            "gambler_badge_count": 0
+        }
 
         if not response_data.get("success", False):
             error_msg = response_data.get("message", "未知错误")
             results.append(f"❌ 抽奖失败: {error_msg}")
-            return results
+            return results, stats
 
         # 获取抽奖结果列表
         raffle_results = response_data.get("results", [])
 
         if not raffle_results:
             results.append("ℹ️ 暂无抽奖结果")
-            return results
+            return results, stats
 
         # 分类统计各类奖励
         prize_stats = {}
@@ -490,6 +519,7 @@ class PlayletFortuneWheel(_PluginBase):
 
                 # 是否中一等奖
                 if grade_key == "1":
+                    stats["first_prize_count"] += count
                     if self._announce_first and self._announce_first_content:
                         shoutbox_str_list.append(self._announce_first_content + (" " if count == 1 else " X" + str(count)))
 
@@ -500,6 +530,7 @@ class PlayletFortuneWheel(_PluginBase):
 
                 # 是否中大赌鬼勋章
                 elif grade_key == "13":
+                    stats["gambler_badge_count"] += count
                     if self._announce_medal and self._announce_medal_content:
                         shoutbox_str_list.append(self._announce_medal_content + (" " if count == 1 else " X" + str(count)))
                         # 在数组顶部插入一条赌鬼勋章中奖的提示
@@ -511,6 +542,10 @@ class PlayletFortuneWheel(_PluginBase):
 
         if shoutbox_str_list:
             self.shoutbox(" | ".join(shoutbox_str_list))
+
+        # 填充统计数据
+        stats["magic_gain"] = total_bonus_earned
+        stats["magic_loss"] = total_bonus_cost
 
         # 添加分隔线
         results.append("─" * 14)
@@ -535,7 +570,7 @@ class PlayletFortuneWheel(_PluginBase):
 
             results.append("")
 
-        return results
+        return results, stats
 
     # 发送喊话(注意合并一次,可能因为频繁而失败)
     def shoutbox(self,text: str):
@@ -549,13 +584,50 @@ class PlayletFortuneWheel(_PluginBase):
             self._site_url + "/shoutbox.php?shbox_text=" + text + "&shout=%E6%88%91%E5%96%8A&sent=yes&type=shoutbox",
             headers=self.headers, proxies=self._get_proxies())
 
+    def upload_report(self, stats: Dict[str, int]) -> None:
+        """
+        上报抽奖结果
+        """
+        if not self._backend_url or not self._auth_token:
+            logger.info("未配置后端地址或Token，跳过上报")
+            return
+
+        try:
+            logger.info("开始上报抽奖数据...")
+            
+            # 构造上报数据
+            report_data = {
+                "魔力值": stats.get("magic_gain", 0) - stats.get("magic_loss", 0),
+                "一等奖": stats.get("first_prize_count", 0),
+                "赌鬼勋章": stats.get("gambler_badge_count", 0)
+            }
+            
+            url = f"{self._backend_url.rstrip('/')}/prize-records/report"
+            
+                
+            headers = {
+                "X-API-Key": f"{self._auth_token}",
+                "Content-Type": "application/json"
+            }
+            
+            # 发送请求
+            response = requests.post(url, json=report_data, headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                logger.info("数据上报成功")
+            else:
+                logger.warning(f"数据上报失败: {response.status_code} {response.text}")
+                
+        except Exception as e:
+            logger.error(f"数据上报异常: {str(e)}")
+
     def _auto_task(self):
         """
         执行每日自动抽奖
         """
         try:
             logger.info("执行每日自动抽奖")
-            results = self.exec_raffle()
+            results, stats = self.exec_raffle()
 
             # 生成报告
             if results:
@@ -585,11 +657,19 @@ class PlayletFortuneWheel(_PluginBase):
                     "announce_second_content": self._announce_second_content,
                     "announce_medal": self._announce_medal,
                     "announce_medal_content": self._announce_medal_content,
+                    "backend_url": self._backend_url,
+                    "auth_token": self._auth_token,
                 })
                 # 按照\n 分割,然后倒叙再拼接回去
                 log_report = "\n".join(reversed(report.split("\n")))
                 logger.info(
                     f"报告请点击左上【在新窗口中打开】查看\n\n==============================================\n{log_report}\n==============================================\n\n")
+                
+                # 尝试上报数据
+                if stats:
+                    self._save_local_data(stats)
+                    self.upload_report(stats)
+                    
             else:
                 logger.info("未抽奖，不发送通知")
 
@@ -690,12 +770,401 @@ class PlayletFortuneWheel(_PluginBase):
         pass
 
     def get_api(self) -> List[Dict[str, Any]]:
-        """获取API"""
-        pass
+        """
+        获取插件API
+        """
+        return [
+            {
+                "path": "/get-statistics-data",
+                "endpoint": self.get_statistics_data,
+                "methods": ["GET"],
+                "auth": "bear",  # 认证类型设为bear
+                "summary": "获取抽奖统计数据",
+                "description": "获取playlet抽奖统计数据",
+            },
+            {
+                "path": "/get-history-data",
+                "endpoint": self.get_history_data_api,
+                "methods": ["GET"],
+                "auth": "bear",
+                "summary": "获取历史抽奖数据",
+                "description": "获取最近60天的抽奖数据",
+            },
+            {
+                "path": "/get-username",
+                "endpoint": self.get_username,
+                "auth": "bear",  # 认证类型设为bear
+                "methods": ["GET"],
+                "summary": "获取用户名",
+                "description": "获取playlet用户名",
+            },
+            {
+                "path": "/is-authenticated",
+                "endpoint": self.is_authenticated,
+                "auth": "bear",  # 认证类型设为bear
+                "methods": ["GET"],
+                "summary": "主动检查授权状态",
+                "description": "主动检查playlet授权状态",
+            },
+            {
+                "path": "/do-raffle",
+                "endpoint": self.exec_raffle_api,
+                "auth": "bear",
+                "methods": ["POST"],
+                "summary": "立即执行抽奖",
+                "description": "立即执行一次抽奖任务",
+            },
+            {
+                "path": "/get-token-status",
+                "endpoint": self.get_token_status,
+                "auth": "bear",
+                "methods": ["GET"],
+                "summary": "获取Token状态",
+                "description": "获取当前Token配置状态",
+            }
+        ]
 
-    def get_page(self) -> List[dict]:
-        """数据页面"""
-        pass
+    def get_token_status(self):
+        """
+        获取Token状态
+        """
+        return {
+            "has_token": bool(self._auth_token)
+        }
+
+    def exec_raffle_api(self):
+        """
+        API endpoint to execute raffle immediately
+        """
+        try:
+            logger.info("收到API请求：立即执行抽奖")
+            results, stats = self.exec_raffle()
+            
+            # 如果有抽奖结果，保存数据并上报
+            if results:
+                # 生成简报
+                report = self.generate_report(results)
+
+                # 发送通知
+                if self._notify:
+                    self.post_message(
+                        mtype=NotificationType.SiteMessage,
+                        title="【Playlet幸运转盘】每日任务完成",
+                        text=report)
+
+                self._last_report = report
+                # 更新配置中的报告
+                self.update_config({
+                    "onlyonce": False,
+                    "cron": self._cron,
+                    "max_raffle_num": self._max_raffle_num,
+                    "enabled": self._enabled,
+                    "cookie": self._cookie,
+                    "notify": self._notify,
+                    "use_proxy": self._use_proxy,
+                    "only_free": self._only_free,
+                    "auto_cookie": self._auto_cookie,
+                    "last_report": self._last_report,
+                    "announce_first": self._announce_first,
+                    "announce_first_content": self._announce_first_content,
+                    "announce_second": self._announce_second,
+                    "announce_second_content": self._announce_second_content,
+                    "announce_medal": self._announce_medal,
+                    "announce_medal_content": self._announce_medal_content,
+                    "backend_url": self._backend_url,
+                    "auth_token": self._auth_token,
+                })
+
+                # 按照\n 分割,然后倒叙再拼接回去
+                log_report = "\n".join(reversed(report.split("\n")))
+                logger.info(
+                    f"报告请点击左上【在新窗口中打开】查看\n\n==============================================\n{log_report}\n==============================================\n\n")
+
+                if stats:
+                    self._save_local_data(stats)
+                    self.upload_report(stats)
+                
+                return {
+                    "success": True,
+                    "message": "抽奖执行完成",
+                    "results": results,
+                    "stats": stats
+                }
+            else:
+                return {
+                    "success": True,
+                    "message": "今日已无抽奖次数",
+                    "results": [],
+                    "stats": {}
+                }
+        except Exception as e:
+            logger.error(f"执行抽奖失败: {str(e)}")
+            return {
+                "success": False,
+                "message": f"执行失败: {str(e)}"
+            }
+
+    def get_history_data_api(self):
+        """
+        API endpoint to get history data
+        """
+        try:
+            history = self.get_data('history') or []
+            return history
+        except Exception as e:
+            logger.error(f"获取历史数据失败: {str(e)}")
+            return []
+
+    def _save_local_data(self, stats: Dict[str, int]):
+        """
+        保存本地数据，按天合并，最多保留60天
+        """
+        try:
+            today_str = datetime.now().strftime('%Y-%m-%d')
+            history = self.get_data('history') or []
+            
+            # 查找今天的数据
+            today_data = None
+            for item in history:
+                if item.get('date') == today_str:
+                    today_data = item
+                    break
+            
+            if today_data:
+                # 合并数据
+                today_data['magic_gain'] += stats.get('magic_gain', 0)
+                today_data['magic_loss'] += stats.get('magic_loss', 0)
+                today_data['first_prize_count'] += stats.get('first_prize_count', 0)
+                today_data['gambler_badge_count'] += stats.get('gambler_badge_count', 0)
+            else:
+                # 新增今天的数据
+                new_item = {
+                    'date': today_str,
+                    'magic_gain': stats.get('magic_gain', 0),
+                    'magic_loss': stats.get('magic_loss', 0),
+                    'first_prize_count': stats.get('first_prize_count', 0),
+                    'gambler_badge_count': stats.get('gambler_badge_count', 0)
+                }
+                history.append(new_item)
+            
+            # 排序并保留最近60天
+            history.sort(key=lambda x: x['date'])
+            if len(history) > 60:
+                history = history[-60:]
+            
+            self.save_data('history', history)
+            logger.info(f"本地数据保存成功: {today_str}")
+            
+        except Exception as e:
+            logger.error(f"保存本地数据失败: {str(e)}")
+
+    def call_backend(self,endpoint, key):
+                try:
+                    logger.info(f"请求后端key新: {key}")
+                    if not key:
+                        key = self.get_username() + ':'
+
+                    logger.info(f"请求后端key: {key}")
+                    url = f"{self._backend_url.rstrip('/')}{endpoint}"
+                    r = requests.get(url, headers={"X-API-Key": key}, timeout=5)
+                    try:
+                        return r.status_code, r.json()
+                    except:
+                        return r.status_code, r.json()
+                except Exception as e:
+                    logger.error(f"请求后端接口失败: {str(e)}")
+                    return 500, {"message": str(e)}
+
+    def get_statistics_data(self):
+        # 1. 尝试使用现有Token获取数据           
+        status, data = self.call_backend("/prize-records/month-top", self._auth_token)
+        logger.info(f"获取月榜数据状态: {status} 数据: {data}")
+
+        if status == 200:
+            # 检查是否是数据对象 (month-top 返回 object)
+            if isinstance(data, dict) and ("loss_top" in data or "gain_top" in data):
+                month_data = data
+                # 获取日榜
+                _, day_data = self.call_backend("/prize-records/day-top", self._auth_token)
+
+                return {
+                   "is_authenticated": True,
+                    "month_data": month_data,
+                    "day_data": day_data,
+                }
+            elif "token" in data:
+                username = self.get_username()
+                self._auth_token = f"{username}:{data.get('token', '')}"
+                self.update_config({
+                            "onlyonce": False,
+                            "cron": self._cron,
+                            "max_raffle_num": self._max_raffle_num,
+                            "enabled": self._enabled,
+                            "cookie": self._cookie,
+                            "notify": self._notify,
+                            "use_proxy": self._use_proxy,
+                            "only_free": self._only_free,
+                            "auto_cookie": self._auto_cookie,
+                            "last_report": self._last_report,
+                            "announce_first": self._announce_first,
+                            "announce_first_content": self._announce_first_content,
+                            "announce_second": self._announce_second,
+                            "announce_second_content": self._announce_second_content,
+                            "announce_medal": self._announce_medal,
+                            "announce_medal_content": self._announce_medal_content,
+                            "backend_url": self._backend_url,
+                            "auth_token": self._auth_token,
+                })
+                return {
+                   "is_authenticated": False,
+                    "token": data.get("token",""),
+                    "auth_message": data.get("message",""),
+                }
+            else:
+                logger.warning(f"Token验证响应格式非预期: {data}")
+                auth_message = f"Token验证响应格式非预期: {data}"
+        elif status == 403:
+                # 认证失败
+            logger.warning("Token验证失败: 4031111",data)
+            msg = data.get("message", "")
+            if "私信" in msg or "private message" in msg:
+                auth_message = "请完成认证：将Token私信发送给arvinchen"
+                return {
+                    "is_authenticated": False,
+                    "auth_message": auth_message,
+                    # 取:后面的字符
+                    "token": self._auth_token.split(":")[-1],
+                }
+            else:
+                auth_message = f"认证失败: {msg}"
+        else:
+            logger.error(f"Token验证请求失败: {status} {data}")
+            auth_message = f"请求失败: {status} {data}"
+                
+        return {
+            "is_authenticated": False,
+            "auth_message": auth_message,
+        }
+
+    def get_username(self) -> str:
+        """
+        获取用户名
+        """
+        if not self._cookie:
+            logger.warning("未配置Cookie，无法获取用户名")
+            return ""
+        try:
+            logger.info("开始从站点获取用户名...")
+            headers = {
+                "cookie": self.clean_cookie_value(self._cookie),
+                "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            }
+            url = self._site_url.rstrip('/') + "/index.php"
+            res = requests.get(url, headers=headers, proxies=self._get_proxies(), timeout=10)
+            if res.status_code == 200:
+                # 尝试解析用户名
+                # 匹配 userdetails.php?id=xxxxx"><b>username</b>
+                match = re.search(r'userdetails\.php\?id=\d+[^>]*>.*?<b[^>]*>(.*?)</b>', res.text, re.S)
+                if not match:
+                     match = re.search(r'userdetails\.php\?id=\d+[^>]*>(.*?)</a>', res.text, re.S)
+                
+                if match:
+                    username = re.sub(r'<[^>]+>', '', match.group(1)).strip()
+                    logger.info(f"成功获取用户名: {username}")
+                    return username
+                else:
+                    logger.warning("无法从页面解析出用户名，请检查Cookie是否失效或页面结构变更")
+            else:
+                logger.error(f"访问站点首页失败: {res.status_code}")
+        except Exception as e:
+            logger.error(f"获取用户名失败: {str(e)}")
+        return ""
+
+    def is_authenticated(self) -> bool:
+        """
+        检查是否已认证
+        """
+        logger.info("未认证状态，尝试申请/找回临时Token")
+        username = self.get_username()
+                # 使用 username: 申请
+        status, data = self.call_backend("/prize-records/month-top", f"{username}:")
+        if status == 200:
+            detail = data.get("detail", data)
+            if isinstance(detail, dict) and "token" in detail:
+                new_token = detail["token"]
+                msg = detail.get("message", "")
+                logger.info(f"获取到临时Token: {new_token}")
+                        
+                # 更新Token
+                if self._auth_token != new_token:
+                    self._auth_token = f"{username}:{new_token}"
+                    # 仅更新内存配置，避免频繁写文件，实际持久化需要用户手动保存或下次任务触发
+                    # 但为了让用户下次进来能看到，这里还是调用update_config吧，注意不要死循环
+                    try:
+                        self.update_config({
+                            "onlyonce": False,
+                            "cron": self._cron,
+                            "max_raffle_num": self._max_raffle_num,
+                            "enabled": self._enabled,
+                            "cookie": self._cookie,
+                            "notify": self._notify,
+                            "use_proxy": self._use_proxy,
+                            "only_free": self._only_free,
+                            "auto_cookie": self._auto_cookie,
+                            "last_report": self._last_report,
+                            "announce_first": self._announce_first,
+                            "announce_first_content": self._announce_first_content,
+                            "announce_second": self._announce_second,
+                            "announce_second_content": self._announce_second_content,
+                            "announce_medal": self._announce_medal,
+                            "announce_medal_content": self._announce_medal_content,
+                            "backend_url": self._backend_url,
+                            "auth_token": self._auth_token,
+                        })
+                        return True
+                    except Exception as e:
+                        logger.error(f"更新配置失败: {str(e)}")
+                        return False
+                elif status == 403:
+                     detail = data.get("detail", {}) if isinstance(data, dict) else str(data)
+                     msg = detail.get("message", "") if isinstance(detail, dict) else str(detail)
+                     logger.warning(f"获取临时Token失败: {msg}")
+                     return False
+            else:
+                logger.error(f"获取临时Token失败: {status} {msg}")
+                return False
+        else:
+            logger.error(f"获取临时Token失败: {status} {msg}")
+            return False
+
+    def get_page(self) -> Optional[List[dict]]:
+        return None
+
+    def get_form(self) -> Tuple[List[dict], Dict[str, Any]]:
+        """
+        拼装插件配置页面，需要返回两块数据：1、页面配置；2、数据结构
+        """
+        
+        return [], {
+            "enabled": False,
+            "onlyonce": False,
+            "notify": True,
+            "use_proxy": False,
+            "only_free": False,
+            "cookie": "",
+            "auto_cookie": True,
+            "cron": "0 9 * * *",
+            "max_raffle_num": None,
+            "last_report": "",
+            "announce_first": True,
+            "announce_first_content": self._default_announce_first_content,
+            "announce_second": True,
+            "announce_second_content": self._default_announce_second_content,
+            "announce_medal": True,
+            "announce_medal_content": self._default_announce_medal_content,
+            "backend_url": "https://fortune-wheel-share-data.jing999.de5.net",
+            "auth_token": "",
+        }  
 
     def get_service(self) -> List[Dict[str, Any]]:
         """
@@ -713,569 +1182,6 @@ class PlayletFortuneWheel(_PluginBase):
 
         if service:
             return service
-
-    def get_form(self) -> Tuple[List[dict], Dict[str, Any]]:
-        """
-        拼装插件配置页面，需要返回两块数据：1、页面配置；2、数据结构
-        """
-        # 动态判断MoviePilot版本，决定定时任务输入框组件类型
-        version = getattr(settings, "VERSION_FLAG", "v1")
-        cron_field_component = "VCronField" if version == "v2" else "VTextField"
-        return [
-            {
-                'component': 'VForm',
-                'content': [
-                    # 基本设置
-                    {
-                        'component': 'VCard',
-                        'props': {
-                            'variant': 'flat',
-                            'class': 'mb-6',
-                            'color': 'surface'
-                        },
-                        'content': [
-                            {
-                                'component': 'VCardItem',
-                                'props': {
-                                    'class': 'pa-6'
-                                },
-                                'content': [
-                                    {
-                                        'component': 'VCardTitle',
-                                        'props': {
-                                            'class': 'd-flex align-center text-h6'
-                                        },
-                                        'content': [
-                                            {
-                                                'component': 'VIcon',
-                                                'props': {
-                                                    'style': 'color: #16b1ff',
-                                                    'class': 'mr-3',
-                                                    'size': 'default'
-                                                },
-                                                'text': 'mdi-cog'
-                                            },
-                                            {
-                                                'component': 'span',
-                                                'text': '基本设置'
-                                            }
-                                        ]
-                                    }
-                                ]
-                            },
-                            {
-                                'component': 'VCardText',
-                                'props': {
-                                    'class': 'px-6 pb-6'
-                                },
-                                'content': [
-                                    {
-                                        'component': 'VRow',
-                                        'content': [
-                                            {
-                                                'component': 'VCol',
-                                                'props': {
-                                                    'cols': 12,
-                                                    'sm': 3
-                                                },
-                                                'content': [
-                                                    {
-                                                        'component': 'VSwitch',
-                                                        'props': {
-                                                            'model': 'enabled',
-                                                            'label': '启用插件',
-                                                            'color': 'primary',
-                                                            'hide-details': True
-                                                        }
-                                                    }
-                                                ]
-                                            },
-                                            {
-                                                'component': 'VCol',
-                                                'props': {
-                                                    'cols': 12,
-                                                    'sm': 3
-                                                },
-                                                'content': [
-                                                    {
-                                                        'component': 'VSwitch',
-                                                        'props': {
-                                                            'model': 'use_proxy',
-                                                            'label': '使用代理',
-                                                            'color': 'primary',
-                                                            'hide-details': True
-                                                        }
-                                                    }
-                                                ]
-                                            },
-                                            {
-                                                'component': 'VCol',
-                                                'props': {
-                                                    'cols': 12,
-                                                    'sm': 3
-                                                },
-                                                'content': [
-                                                    {
-                                                        'component': 'VSwitch',
-                                                        'props': {
-                                                            'model': 'notify',
-                                                            'label': '开启通知',
-                                                            'color': 'primary',
-                                                            'hide-details': True
-                                                        }
-                                                    }
-                                                ]
-                                            },
-                                            {
-                                                'component': 'VCol',
-                                                'props': {
-                                                    'cols': 12,
-                                                    'sm': 3
-                                                },
-                                                'content': [
-                                                    {
-                                                        'component': 'VSwitch',
-                                                        'props': {
-                                                            'model': 'onlyonce',
-                                                            'label': '立即运行一次',
-                                                            'color': 'primary',
-                                                            'hide-details': True
-                                                        }
-                                                    }
-                                                ]
-                                            }
-                                        ]
-                                    }
-                                ]
-                            }
-                        ]
-                    },
-                    # 功能设置
-                    {
-                        'component': 'VCard',
-                        'props': {
-                            'variant': 'flat',
-                            'class': 'mb-6',
-                            'color': 'surface'
-                        },
-                        'content': [
-                            {
-                                'component': 'VCardItem',
-                                'props': {
-                                    'class': 'pa-6'
-                                },
-                                'content': [
-                                    {
-                                        'component': 'VCardTitle',
-                                        'props': {
-                                            'class': 'd-flex align-center text-h6'
-                                        },
-                                        'content': [
-                                            {
-                                                'component': 'VIcon',
-                                                'props': {
-                                                    'style': 'color: #16b1ff',
-                                                    'class': 'mr-3',
-                                                    'size': 'default'
-                                                },
-                                                'text': 'mdi-tools'
-                                            },
-                                            {
-                                                'component': 'span',
-                                                'text': '功能设置'
-                                            }
-                                        ]
-                                    }
-                                ]
-                            },
-                            {
-                                'component': 'VCardText',
-                                'props': {
-                                    'class': 'px-6 pb-6'
-                                },
-                                'content': [
-                                    {
-                                        'component': 'VRow',
-                                        'content': [
-                                            {
-                                                'component': 'VCol',
-                                                'props': {
-                                                    'cols': 12,
-                                                    'sm': 3
-                                                },
-                                                'content': [
-                                                    {
-                                                        'component': 'VSwitch',
-                                                        'props': {
-                                                            'model': 'auto_cookie',
-                                                            'label': '使用站点Cookie',
-                                                            'color': 'primary',
-                                                            'hide-details': True
-                                                        }
-                                                    }
-                                                ]
-                                            },
-                                            {
-                                                'component': 'VCol',
-                                                'props': {
-                                                    'cols': 12,
-                                                    'sm': 3
-                                                },
-                                                'content': [
-                                                    {
-                                                        'component': 'VSwitch',
-                                                        'props': {
-                                                            'model': 'only_free',
-                                                            'label': '只抽免费',
-                                                            'color': 'primary',
-                                                            'hide-details': True
-                                                        }
-                                                    }
-                                                ]
-                                            },
-                                        ]
-                                    },
-                                    {
-                                        'component': 'VRow',
-                                        'content': [
-                                            {
-                                                'component': 'VCol',
-                                                'props': {
-                                                    'cols': 12,
-                                                    'sm': 4
-                                                },
-                                                'content': [
-                                                    {
-                                                        'component': 'VTextField',
-                                                        'props': {
-                                                            'model': 'cookie',
-                                                            'label': '站点Cookie',
-                                                            'variant': 'outlined',
-                                                            'color': 'primary',
-                                                            'hide-details': True,
-                                                            'class': 'mt-2',
-                                                            'disabled': 'auto_cookie'
-                                                        }
-                                                    }
-                                                ]
-                                            },
-                                            {
-                                                'component': 'VCol',
-                                                'props': {
-                                                    'cols': 12,
-                                                    'sm': 4
-                                                },
-                                                'content': [
-                                                    {
-                                                        'component': cron_field_component,  # 动态切换
-                                                        'props': {
-                                                            'model': 'cron',
-                                                            'label': '执行周期(cron)',
-                                                            'variant': 'outlined',
-                                                            'color': 'primary',
-                                                            'hide-details': True,
-                                                            'placeholder': '请自行设置执行周期',
-                                                            'class': 'mt-2'
-                                                        }
-                                                    }
-                                                ]
-                                            },
-                                            {
-                                                'component': 'VCol',
-                                                'props': {
-                                                    'cols': 12,
-                                                    'sm': 4
-                                                },
-                                                'content': [
-                                                    {
-                                                        'component': "VTextField",  # 动态切换
-                                                        'props': {
-                                                            'model': 'max_raffle_num',
-                                                            'label': '最大抽奖次数',
-                                                            'variant': 'outlined',
-                                                            'color': 'primary',
-                                                            'hide-details': True,
-                                                            'placeholder': '默认全部抽完',
-                                                            'class': 'mt-2'
-                                                        }
-                                                    }
-                                                ]
-                                            }
-                                        ]
-                                    }
-                                ]
-                            }
-                        ]
-                    },
-                    # 喊话设置
-                    {
-                        'component': 'VCard',
-                        'props': {
-                            'variant': 'flat',
-                            'class': 'mb-6',
-                            'color': 'surface'
-                        },
-                        'content': [
-                            {
-                                'component': 'VCardItem',
-                                'props': {
-                                    'class': 'pa-6'
-                                },
-                                'content': [
-                                    {
-                                        'component': 'VCardTitle',
-                                        'props': {
-                                            'class': 'd-flex align-center text-h6'
-                                        },
-                                        'content': [
-                                            {
-                                                'component': 'VIcon',
-                                                'props': {
-                                                    'style': 'color: #16b1ff',
-                                                    'class': 'mr-3',
-                                                    'size': 'default'
-                                                },
-                                                'text': 'mdi-chat-typing-outline'
-                                            },
-                                            {
-                                                'component': 'span',
-                                                'text': '中奖喊话设置'
-                                            }
-                                        ]
-                                    }
-                                ]
-                            },
-                            {
-                                'component': 'VCardText',
-                                'props': {
-                                    'class': 'px-6 pb-6'
-                                },
-                                'content': [
-                                    {
-                                        'component': 'VRow',
-                                        'content': [
-                                            {
-                                                'component': 'VCol',
-                                                'props': {
-                                                    'cols': 12,
-                                                    'sm': 3,
-                                                    'class': 'd-flex align-sm-center'
-                                                },
-                                                'content': [
-                                                    {
-                                                        'component': 'VSwitch',
-                                                        'props': {
-                                                            'model': 'announce_first',
-                                                            'label': '一等奖喊话',
-                                                            'color': 'primary',
-                                                            'hide-details': True
-                                                        }
-                                                    }
-                                                ]
-                                            },
-                                            {
-                                                'component': 'VCol',
-                                                'props': {
-                                                    'cols': 12,
-                                                    'sm': 9,
-                                                },
-                                                'content': [
-                                                    {
-                                                        'component': 'VTextField',
-                                                        'props': {
-                                                            'model': 'announce_first_content',
-                                                            'label': '喊话内容',
-                                                            'variant': 'outlined',
-                                                            'color': 'primary',
-                                                            'hide-details': True,
-                                                            'class': 'mt-2 w-full',
-                                                        }
-                                                    }
-                                                ]
-                                            },
-                                        ]
-                                    },
-                                    {
-                                        'component': 'VRow',
-                                        'content': [
-                                            {
-                                                'component': 'VCol',
-                                                'props': {
-                                                    'cols': 12,
-                                                    'sm': 3,
-                                                    'class': 'd-flex align-sm-center'
-                                                },
-                                                'content': [
-                                                    {
-                                                        'component': 'VSwitch',
-                                                        'props': {
-                                                            'model': 'announce_second',
-                                                            'label': '二等奖喊话',
-                                                            'color': 'primary',
-                                                            'hide-details': True
-                                                        }
-                                                    }
-                                                ]
-                                            },
-                                            {
-                                                'component': 'VCol',
-                                                'props': {
-                                                    'cols': 12,
-                                                    'sm': 9
-                                                },
-                                                'content': [
-                                                    {
-                                                        'component': 'VTextField',
-                                                        'props': {
-                                                            'model': 'announce_second_content',
-                                                            'label': '喊话内容',
-                                                            'variant': 'outlined',
-                                                            'color': 'primary',
-                                                            'hide-details': True,
-                                                            'class': 'mt-2 w-full',
-                                                        }
-                                                    }
-                                                ]
-                                            },
-                                        ]
-                                    },
-                                    {
-                                        'component': 'VRow',
-                                        'content': [
-                                            {
-                                                'component': 'VCol',
-                                                'props': {
-                                                    'cols': 12,
-                                                    'sm': 3,
-                                                    'class': 'd-flex align-sm-center'
-                                                },
-                                                'content': [
-                                                    {
-                                                        'component': 'VSwitch',
-                                                        'props': {
-                                                            'model': 'announce_medal',
-                                                            'label': '赌鬼勋章喊话',
-                                                            'color': 'primary',
-                                                            'hide-details': True
-                                                        }
-                                                    }
-                                                ]
-                                            },
-                                            {
-                                                'component': 'VCol',
-                                                'props': {
-                                                    'cols': 12,
-                                                    'sm': 9
-                                                },
-                                                'content': [
-                                                    {
-                                                        'component': 'VTextField',
-                                                        'props': {
-                                                            'model': 'announce_medal_content',
-                                                            'label': '喊话内容',
-                                                            'variant': 'outlined',
-                                                            'color': 'primary',
-                                                            'hide-details': True,
-                                                            'class': 'mt-2 w-full',
-                                                        }
-                                                    }
-                                                ]
-                                            },
-                                        ]
-                                    },
-                                ]
-                            }
-                        ]
-                    },
-                    # 使用说明
-                    {
-                        'component': 'VCard',
-                        'props': {
-                            'variant': 'flat',
-                            'class': 'mb-6',
-                            'color': 'surface'
-                        },
-                        'content': [
-                            {
-                                'component': 'VCardItem',
-                                'props': {
-                                    'class': 'pa-6'
-                                },
-                                'content': [
-                                    {
-                                        'component': 'VCardTitle',
-                                        'props': {
-                                            'class': 'd-flex align-center text-h6'
-                                        },
-                                        'content': [
-                                            {
-                                                'component': 'VIcon',
-                                                'props': {
-                                                    'style': 'color: #16b1ff',
-                                                    'class': 'mr-3',
-                                                    'size': 'default'
-                                                },
-                                                'text': 'mdi-treasure-chest'
-                                            },
-                                            {
-                                                'component': 'span',
-                                                'text': '最后一次抽奖报告'
-                                            }
-                                        ]
-                                    }
-                                ]
-                            },
-                            {
-                                'component': 'VCardText',
-                                'props': {
-                                    'class': 'px-6 pb-6'
-                                },
-                                'content': [
-                                    {
-                                        'component': 'div',
-                                        'props': {
-                                            'class': 'text-body-1'
-                                        },
-                                        'content': [
-                                            {
-                                                'component': 'div',
-                                                'props': {
-                                                    'class': 'mb-4 text-pre-wrap'
-                                                },
-                                                'content': [
-                                                    {
-                                                        'component': 'div',
-                                                        'class': 'text-subtitle-1 font-weight-bold mb-2 ',
-                                                        'text': self._last_report or '暂无数据,可以点击立即运行一次查看'
-                                                    },
-                                                ]
-                                            },
-                                        ]
-                                    }
-                                ]
-                            }
-                        ]
-                    }
-                ]
-            }
-        ], {
-            "enabled": False,
-            "onlyonce": False,
-            "notify": True,
-            "use_proxy": False,
-            "only_free": False,
-            "cookie": "",
-            "auto_cookie": True,
-            "cron": "0 9 * * *",
-            "max_raffle_num": None,
-            "last_report": "",
-            "announce_first": True,
-            "announce_first_content": self._default_announce_first_content,
-            "announce_second": True,
-            "announce_second_content": self._default_announce_second_content,
-            "announce_medal": True,
-            "announce_medal_content": self._default_announce_medal_content,
-        }
 
     def stop_service(self) -> None:
         """
