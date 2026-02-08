@@ -1,5 +1,6 @@
 import re
 import time
+import threading
 from datetime import datetime, timedelta
 from typing import Any, List, Dict, Tuple, Optional
 
@@ -23,7 +24,7 @@ class PlayletFortuneWheel(_PluginBase):
     # 插件图标
     plugin_icon = "https://raw.githubusercontent.com/ArvinChen9539/MoviePilot-Plugins/feature-playlet-fortune-wheel/icons/PlayletFortuneWheel.png"
     # 插件版本
-    plugin_version = "2.0.1"
+    plugin_version = "2.0.2"
     # 插件作者
     plugin_author = "ArvinChen9539"
     # 作者主页
@@ -66,7 +67,7 @@ class PlayletFortuneWheel(_PluginBase):
     _last_report: Optional[str] = None
 
     # 后端地址
-    _backend_url: str = "https://fortune-wheel-share-data.jing999.de5.net"
+    _backend_url: str = "http://jing999.top:8000"
     # 认证Token
     _auth_token: Optional[str] = None
 
@@ -121,7 +122,6 @@ class PlayletFortuneWheel(_PluginBase):
             self._announce_medal = config.get("announce_medal", True)
             self._announce_medal_content = config.get("announce_medal_content", self._default_announce_medal_content)
             self._last_report = config.get("last_report")
-            self._backend_url = config.get("backend_url", "https://fortune-wheel-share-data.jing999.de5.net")
             self._auth_token = config.get("auth_token")
 
             # 处理自动获取cookie
@@ -148,7 +148,6 @@ class PlayletFortuneWheel(_PluginBase):
                 "announce_second_content": self._announce_second_content or self._default_announce_second_content,
                 "announce_medal": self._announce_medal,
                 "announce_medal_content": self._announce_medal_content or self._default_announce_medal_content,
-                "backend_url": self._backend_url,
                 "auth_token": self._auth_token,
             })
 
@@ -181,7 +180,6 @@ class PlayletFortuneWheel(_PluginBase):
                     "announce_second_content": self._announce_second_content,
                     "announce_medal": self._announce_medal,
                     "announce_medal_content": self._announce_medal_content,
-                    "backend_url": self._backend_url,
                     "auth_token": self._auth_token,
                 })
 
@@ -573,53 +571,79 @@ class PlayletFortuneWheel(_PluginBase):
         return results, stats
 
     # 发送喊话(注意合并一次,可能因为频繁而失败)
-    def shoutbox(self,text: str):
-        logger.info("发送喊话内容: %s", text)
-        self.headers = {
-            "cookie": self.clean_cookie_value(self._cookie),
-            "referer": self._site_url,
-            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36 Edg/132.0.0.0"
-        }
-        requests.get(
-            self._site_url + "/shoutbox.php?shbox_text=" + text + "&shout=%E6%88%91%E5%96%8A&sent=yes&type=shoutbox",
-            headers=self.headers, proxies=self._get_proxies())
+    def shoutbox(self, text: str):
+        def _shout_task():
+            for i in range(3):
+                try:
+                    logger.info(f"发送喊话内容 (第{i+1}次尝试): {text}")
+                    self.headers = {
+                        "cookie": self.clean_cookie_value(self._cookie),
+                        "referer": self._site_url,
+                        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36 Edg/132.0.0.0"
+                    }
+                    res = requests.get(
+                        self._site_url + "/shoutbox.php?shbox_text=" + text + "&shout=%E6%88%91%E5%96%8A&sent=yes&type=shoutbox",
+                        headers=self.headers, proxies=self._get_proxies(), timeout=30)
+                    
+                    if res.status_code == 200:
+                        logger.info("喊话成功")
+                        return
+                    else:
+                        logger.warning(f"喊话失败: {res.status_code}")
+                except Exception as e:
+                    logger.error(f"喊话异常: {str(e)}")
+                
+                if i < 2:
+                    logger.info("2分钟后重试...")
+                    time.sleep(120)
+
+        threading.Thread(target=_shout_task).start()
 
     def upload_report(self, stats: Dict[str, int]) -> None:
         """
         上报抽奖结果
         """
         if not self._backend_url or not self._auth_token:
-            logger.info("未配置后端地址或Token，跳过上报")
+            logger.info("未配置Token，跳过上报")
             return
 
-        try:
-            logger.info("开始上报抽奖数据...")
-            
-            # 构造上报数据
-            report_data = {
-                "魔力值": stats.get("magic_gain", 0) - stats.get("magic_loss", 0),
-                "一等奖": stats.get("first_prize_count", 0),
-                "赌鬼勋章": stats.get("gambler_badge_count", 0)
-            }
-            
-            url = f"{self._backend_url.rstrip('/')}/prize-records/report"
-            
+        def _report_task():
+            for i in range(3):
+                try:
+                    logger.info(f"开始上报抽奖数据 (第{i+1}次尝试)...")
+                    
+                    # 构造上报数据
+                    report_data = {
+                        "魔力值": stats.get("magic_gain", 0) - stats.get("magic_loss", 0),
+                        "一等奖": stats.get("first_prize_count", 0),
+                        "赌鬼勋章": stats.get("gambler_badge_count", 0)
+                    }
+                    
+                    url = f"{self._backend_url.rstrip('/')}/prize-records/report"
+                    
+                        
+                    headers = {
+                        "X-API-Key": f"{self._auth_token}",
+                        "Content-Type": "application/json"
+                    }
+                    
+                    # 发送请求
+                    response = requests.post(url, json=report_data, headers=headers, timeout=10)
+                    
+                    if response.status_code == 200:
+                        logger.info("数据上报成功")
+                        return
+                    else:
+                        logger.warning(f"数据上报失败: {response.status_code} {response.text}")
+                        
+                except Exception as e:
+                    logger.error(f"数据上报异常: {str(e)}")
                 
-            headers = {
-                "X-API-Key": f"{self._auth_token}",
-                "Content-Type": "application/json"
-            }
-            
-            # 发送请求
-            response = requests.post(url, json=report_data, headers=headers, timeout=10)
-            
-            if response.status_code == 200:
-                logger.info("数据上报成功")
-            else:
-                logger.warning(f"数据上报失败: {response.status_code} {response.text}")
-                
-        except Exception as e:
-            logger.error(f"数据上报异常: {str(e)}")
+                if i < 2:
+                    logger.info("2分钟后重试上报...")
+                    time.sleep(120)
+
+        threading.Thread(target=_report_task).start()
 
     def _auto_task(self):
         """
@@ -657,7 +681,6 @@ class PlayletFortuneWheel(_PluginBase):
                     "announce_second_content": self._announce_second_content,
                     "announce_medal": self._announce_medal,
                     "announce_medal_content": self._announce_medal_content,
-                    "backend_url": self._backend_url,
                     "auth_token": self._auth_token,
                 })
                 # 按照\n 分割,然后倒叙再拼接回去
@@ -821,8 +844,31 @@ class PlayletFortuneWheel(_PluginBase):
                 "methods": ["GET"],
                 "summary": "获取Token状态",
                 "description": "获取当前Token配置状态",
+            },
+            {
+                "path": "/get-daily-magic-list",
+                "endpoint": self.get_daily_magic_list,
+                "auth": "bear",
+                "methods": ["GET"],
+                "summary": "获取每日魔力值榜单",
+                "description": "获取每日魔力值变化排行榜列表",
             }
         ]
+
+    def get_daily_magic_list(self):
+        """
+        获取每日魔力值榜单
+        """
+        try:
+            status, data = self.call_backend("/prize-records/daily-magic-list", self._auth_token)
+            if status == 200:
+                return data
+            else:
+                logger.error(f"获取每日魔力值榜单失败: {status} {data}")
+                return []
+        except Exception as e:
+            logger.error(f"获取每日魔力值榜单异常: {str(e)}")
+            return []
 
     def get_token_status(self):
         """
@@ -871,7 +917,6 @@ class PlayletFortuneWheel(_PluginBase):
                     "announce_second_content": self._announce_second_content,
                     "announce_medal": self._announce_medal,
                     "announce_medal_content": self._announce_medal_content,
-                    "backend_url": self._backend_url,
                     "auth_token": self._auth_token,
                 })
 
@@ -953,18 +998,15 @@ class PlayletFortuneWheel(_PluginBase):
                 history = history[-60:]
             
             self.save_data('history', history)
-            logger.info(f"本地数据保存成功: {today_str}")
             
         except Exception as e:
             logger.error(f"保存本地数据失败: {str(e)}")
 
     def call_backend(self,endpoint, key):
                 try:
-                    logger.info(f"请求后端key新: {key}")
                     if not key:
                         key = self.get_username() + ':'
 
-                    logger.info(f"请求后端key: {key}")
                     url = f"{self._backend_url.rstrip('/')}{endpoint}"
                     r = requests.get(url, headers={"X-API-Key": key}, timeout=5)
                     try:
@@ -978,7 +1020,6 @@ class PlayletFortuneWheel(_PluginBase):
     def get_statistics_data(self):
         # 1. 尝试使用现有Token获取数据           
         status, data = self.call_backend("/prize-records/month-top", self._auth_token)
-        logger.info(f"获取月榜数据状态: {status} 数据: {data}")
 
         if status == 200:
             # 检查是否是数据对象 (month-top 返回 object)
@@ -1012,7 +1053,6 @@ class PlayletFortuneWheel(_PluginBase):
                             "announce_second_content": self._announce_second_content,
                             "announce_medal": self._announce_medal,
                             "announce_medal_content": self._announce_medal_content,
-                            "backend_url": self._backend_url,
                             "auth_token": self._auth_token,
                 })
                 return {
@@ -1054,7 +1094,6 @@ class PlayletFortuneWheel(_PluginBase):
             logger.warning("未配置Cookie，无法获取用户名")
             return ""
         try:
-            logger.info("开始从站点获取用户名...")
             headers = {
                 "cookie": self.clean_cookie_value(self._cookie),
                 "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
@@ -1118,7 +1157,6 @@ class PlayletFortuneWheel(_PluginBase):
                             "announce_second_content": self._announce_second_content,
                             "announce_medal": self._announce_medal,
                             "announce_medal_content": self._announce_medal_content,
-                            "backend_url": self._backend_url,
                             "auth_token": self._auth_token,
                         })
                         return True
@@ -1162,7 +1200,6 @@ class PlayletFortuneWheel(_PluginBase):
             "announce_second_content": self._default_announce_second_content,
             "announce_medal": True,
             "announce_medal_content": self._default_announce_medal_content,
-            "backend_url": "https://fortune-wheel-share-data.jing999.de5.net",
             "auth_token": "",
         }  
 
