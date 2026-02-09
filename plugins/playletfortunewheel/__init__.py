@@ -1,6 +1,7 @@
 import re
 import time
 import threading
+import urllib.parse
 from datetime import datetime, timedelta
 from typing import Any, List, Dict, Tuple, Optional
 
@@ -24,7 +25,7 @@ class PlayletFortuneWheel(_PluginBase):
     # 插件图标
     plugin_icon = "https://raw.githubusercontent.com/ArvinChen9539/MoviePilot-Plugins/feature-playlet-fortune-wheel/icons/PlayletFortuneWheel.png"
     # 插件版本
-    plugin_version = "2.0.2"
+    plugin_version = "2.0.3"
     # 插件作者
     plugin_author = "ArvinChen9539"
     # 作者主页
@@ -70,6 +71,11 @@ class PlayletFortuneWheel(_PluginBase):
     _backend_url: str = "http://jing999.top:8000"
     # 认证Token
     _auth_token: Optional[str] = None
+
+    # 每日汇总通知
+    _daily_summary_notify: bool = True
+    # 最迟报告时间
+    _daily_summary_time: str = "11:00"
 
     # 参数
     _cookie: Optional[str] = None
@@ -123,6 +129,8 @@ class PlayletFortuneWheel(_PluginBase):
             self._announce_medal_content = config.get("announce_medal_content", self._default_announce_medal_content)
             self._last_report = config.get("last_report")
             self._auth_token = config.get("auth_token")
+            self._daily_summary_notify = config.get("daily_summary_notify", True)
+            self._daily_summary_time = config.get("daily_summary_time", "11:00")
 
             # 处理自动获取cookie
             if self._auto_cookie:
@@ -149,6 +157,8 @@ class PlayletFortuneWheel(_PluginBase):
                 "announce_medal": self._announce_medal,
                 "announce_medal_content": self._announce_medal_content or self._default_announce_medal_content,
                 "auth_token": self._auth_token,
+                "daily_summary_notify": self._daily_summary_notify,
+                "daily_summary_time": self._daily_summary_time,
             })
 
         if self._onlyonce:
@@ -181,6 +191,8 @@ class PlayletFortuneWheel(_PluginBase):
                     "announce_medal": self._announce_medal,
                     "announce_medal_content": self._announce_medal_content,
                     "auth_token": self._auth_token,
+                    "daily_summary_notify": self._daily_summary_notify,
+                    "daily_summary_time": self._daily_summary_time,
                 })
 
                 # 启动任务
@@ -584,7 +596,7 @@ class PlayletFortuneWheel(_PluginBase):
                     res = requests.get(
                         self._site_url + "/shoutbox.php?shbox_text=" + text + "&shout=%E6%88%91%E5%96%8A&sent=yes&type=shoutbox",
                         headers=self.headers, proxies=self._get_proxies(), timeout=30)
-                    
+
                     if res.status_code == 200:
                         logger.info("喊话成功")
                         return
@@ -592,7 +604,7 @@ class PlayletFortuneWheel(_PluginBase):
                         logger.warning(f"喊话失败: {res.status_code}")
                 except Exception as e:
                     logger.error(f"喊话异常: {str(e)}")
-                
+
                 if i < 2:
                     logger.info("2分钟后重试...")
                     time.sleep(120)
@@ -611,34 +623,36 @@ class PlayletFortuneWheel(_PluginBase):
             for i in range(3):
                 try:
                     logger.info(f"开始上报抽奖数据 (第{i+1}次尝试)...")
-                    
+
                     # 构造上报数据
                     report_data = {
                         "魔力值": stats.get("magic_gain", 0) - stats.get("magic_loss", 0),
                         "一等奖": stats.get("first_prize_count", 0),
                         "赌鬼勋章": stats.get("gambler_badge_count", 0)
                     }
-                    
+
                     url = f"{self._backend_url.rstrip('/')}/prize-records/report"
-                    
-                        
+
+                    # 对可能包含中文字符的Token进行编码，避免 latin-1 错误，保留冒号不转义
+                    safe_token = urllib.parse.quote(str(self._auth_token), safe=':')
+
                     headers = {
-                        "X-API-Key": f"{self._auth_token}",
+                        "X-API-Key": safe_token,
                         "Content-Type": "application/json"
                     }
-                    
+
                     # 发送请求
                     response = requests.post(url, json=report_data, headers=headers, timeout=10)
-                    
+
                     if response.status_code == 200:
                         logger.info("数据上报成功")
                         return
                     else:
                         logger.warning(f"数据上报失败: {response.status_code} {response.text}")
-                        
+
                 except Exception as e:
                     logger.error(f"数据上报异常: {str(e)}")
-                
+
                 if i < 2:
                     logger.info("2分钟后重试上报...")
                     time.sleep(120)
@@ -687,12 +701,12 @@ class PlayletFortuneWheel(_PluginBase):
                 log_report = "\n".join(reversed(report.split("\n")))
                 logger.info(
                     f"报告请点击左上【在新窗口中打开】查看\n\n==============================================\n{log_report}\n==============================================\n\n")
-                
+
                 # 尝试上报数据
                 if stats:
                     self._save_local_data(stats)
                     self.upload_report(stats)
-                    
+
             else:
                 logger.info("未抽奖，不发送通知")
 
@@ -852,8 +866,222 @@ class PlayletFortuneWheel(_PluginBase):
                 "methods": ["GET"],
                 "summary": "获取每日魔力值榜单",
                 "description": "获取每日魔力值变化排行榜列表",
+            },
+            {
+                "path": "/get-daily-status",
+                "endpoint": self.get_daily_status,
+                "auth": "bear",
+                "methods": ["GET"],
+                "summary": "获取每日抽奖状态",
+                "description": "获取每日抽奖状态(总人数/已抽人数)",
+            },
+            {
+                "path": "/generate-daily-summary",
+                "endpoint": self.generate_daily_summary_api,
+                "auth": "bear",
+                "methods": ["POST"],
+                "summary": "生成每日汇总报告",
+                "description": "立即生成每日汇总报告并发送通知",
             }
         ]
+
+    def generate_daily_summary_api(self):
+        """
+        API endpoint to generate daily summary immediately
+        """
+        try:
+            logger.info("收到API请求：立即生成每日汇总报告")
+
+            # 获取所有用户数据
+            data_list = self.get_daily_magic_list()
+            if not data_list:
+                return {
+                    "success": False,
+                    "message": "获取每日数据失败"
+                }
+
+            # 分析数据 (这里其实可以不用传 undrawn_users，因为 generate_daily_summary_report 会重新计算)
+            undrawn_users = [u for u in data_list if u.get('status') == 'undrawn']
+
+            # 生成报告
+            report = self.generate_daily_summary_report(data_list, undrawn_users)
+
+            return {
+                "success": True,
+                "message": "报告已生成",
+                "report": report
+            }
+        except Exception as e:
+            logger.error(f"主动生成每日汇总报告失败: {str(e)}")
+            return {
+                "success": False,
+                "message": f"生成失败: {str(e)}"
+            }
+
+    def get_daily_status(self):
+        """
+        获取每日抽奖状态
+        """
+        try:
+            status, data = self.call_backend("/prize-records/daily-status", self._auth_token)
+            if status == 200:
+                return data
+            else:
+                logger.error(f"获取每日抽奖状态失败: {status} {data}")
+                return {}
+        except Exception as e:
+            logger.error(f"获取每日抽奖状态异常: {str(e)}")
+            return {}
+
+    def _check_daily_summary(self):
+        """
+        检查是否需要发送每日汇总
+        """
+        try:
+            today_str = datetime.now().strftime('%Y-%m-%d')
+            # 检查今天是否已发送
+            sent_date = self.get_data('daily_summary_sent_date')
+            if sent_date == today_str:
+                return
+
+            # 获取所有用户数据
+            data_list = self.get_daily_magic_list()
+            if not data_list:
+                return
+
+            # 分析数据
+            total_users = len(data_list)
+            undrawn_users = [u for u in data_list if u.get('status') == 'undrawn']
+            undrawn_count = len(undrawn_users)
+
+            should_send = False
+
+            # 条件1: 所有人都已抽奖
+            if undrawn_count == 0:
+                should_send = True
+
+            # 条件2: 到达最迟报告时间
+            if not should_send and self._daily_summary_time:
+                now_time = datetime.now().strftime('%H:%M')
+                if now_time >= self._daily_summary_time:
+                    should_send = True
+
+            if should_send:
+                logger.info("满足每日汇总发送条件，开始生成报告")
+                report = self.generate_daily_summary_report(data_list, undrawn_users)
+
+                # 发送通知
+                self.post_message(
+                    mtype=NotificationType.SiteMessage,
+                    title="【Playlet幸运转盘】每日风云榜",
+                    text=report
+                )
+
+                # 标记今日已发送
+                self.save_data('daily_summary_sent_date', today_str)
+
+        except Exception as e:
+            logger.error(f"检查每日汇总失败: {str(e)}")
+
+    def generate_daily_summary_report(self, data_list: List[dict], undrawn_users: List[dict]) -> str:
+        """
+        生成每日汇总报告
+        """
+        try:
+            today_str = datetime.now().strftime('%Y-%m-%d')
+            total_count = len(data_list)
+
+            # 重新过滤数据，确保状态字段正确
+            # 后端返回字段为 status (drawn/undrawn)
+            undrawn_users = [u for u in data_list if u.get('status') == 'undrawn']
+            drawn_users = [u for u in data_list if u.get('status') == 'drawn']
+
+            drawn_count = len(drawn_users)
+
+            # 排序：魔力值从高到低
+            drawn_users.sort(key=lambda x: x.get('magic_points', 0) if x.get('magic_points') is not None else 0, reverse=True)
+
+            report = f"🎡 Playlet 伙伴风云榜 🎡\n"
+            report += f"📅 {today_str}\n"
+            report += "━━━━━━━━━━━━━━\n"
+
+            # 概况
+            if len(undrawn_users) == 0:
+                report += f"🎉 喜大普奔！今日 {total_count} 位伙伴全部完成打卡！\n"
+                report += "🚀 大家的手速都很快，看来都是老赌狗了！\n"
+            else:
+                report += f"📊 今日战况: {drawn_count}/{total_count} 已完赛\n"
+                report += f"🐢 还有 {len(undrawn_users)} 位伙伴在摸鱼，拖慢了全队的节奏！\n"
+
+            report += "\n"
+            report += "─" * 14 + "\n"
+
+            # 高光时刻 (Top 3)
+            report += "👑 今日欧皇榜 (魔力值):\n"
+            if drawn_users:
+                medals = ["🥇", "🥈", "🥉"]
+                for i, user in enumerate(drawn_users[:3]):
+                    medal = medals[i] if i < 3 else "🏅"
+                    points = user.get('magic_points', 0)
+                    username = user.get('username', '未知')
+                    # 格式化魔力值
+                    points_str = self.format_num(points)
+                    report += f"{medal} {username}: {points_str} 点\n"
+
+                # 最佳评语
+                top_points = drawn_users[0].get('magic_points', 0)
+                if top_points and top_points > 2000000:
+                    report += "✨ 哇塞！今日欧皇恐怖如斯！\n"
+                elif top_points and top_points < 1000000:
+                    report += "🌚 今天的欧皇有点水啊...\n"
+            else:
+                report += "👻 暂无数据，看来大家今天脸都很黑？\n"
+
+            report += "\n"
+            report += "─" * 14 + "\n"
+
+            # 当日亏损最多 (Top 1)
+            loss_users = sorted(drawn_users, key=lambda x: x.get('magic_points', 0) if x.get('magic_points') is not None else 0)
+            if loss_users and loss_users[0].get('magic_points', 0) < 0:
+                 report += "💸 今日散财童子:\n"
+                 user = loss_users[0]
+                 points = user.get('magic_points', 0)
+                 username = user.get('username', '未知')
+                 points_str = self.format_num(points)
+                 report += f"👻 {username}: {points_str} 点\n"
+                 report += "😭 摸摸头，明天一定会回本的！\n"
+                 report += "\n"
+                 report += "─" * 14 + "\n"
+
+            # 一等奖获得最多者 (Top 1)
+            first_prize_users = sorted(drawn_users, key=lambda x: x.get('first_prize', 0) if x.get('first_prize') is not None else 0, reverse=True)
+            if first_prize_users and first_prize_users[0].get('first_prize', 0) > 0:
+                 report += "🌟 今日幸运星:\n"
+                 user = first_prize_users[0]
+                 count = user.get('first_prize', 0)
+                 username = user.get('username', '未知')
+                 report += f"🤩 {username}: 一等奖 {count} 次\n"
+                 report += "🥳 运气爆棚！快去买彩票！\n"
+                 report += "\n"
+                 report += "─" * 14 + "\n"
+
+            # 摸鱼大队 (如果有)
+            if undrawn_users:
+                report += "🐟 摸鱼大队 (公开处刑):\n"
+                names = [u.get('username', '未知') for u in undrawn_users]
+                report += ", ".join(names) + "\n"
+                report += "📢 赶紧去抽奖！别让大家等你一个人！\n"
+                report += "\n"
+
+            # 底部
+            report += "━━━━━━━━━━━━━━\n"
+            report += "💡 小贴士: 记得每天来一发，越抽越有！\n"
+
+            return report
+
+        except Exception as e:
+            logger.error(f"生成汇总报告失败: {str(e)}")
+            return "❌ 生成报告失败"
 
     def get_daily_magic_list(self):
         """
@@ -885,7 +1113,7 @@ class PlayletFortuneWheel(_PluginBase):
         try:
             logger.info("收到API请求：立即执行抽奖")
             results, stats = self.exec_raffle()
-            
+
             # 如果有抽奖结果，保存数据并上报
             if results:
                 # 生成简报
@@ -928,7 +1156,7 @@ class PlayletFortuneWheel(_PluginBase):
                 if stats:
                     self._save_local_data(stats)
                     self.upload_report(stats)
-                
+
                 return {
                     "success": True,
                     "message": "抽奖执行完成",
@@ -967,14 +1195,14 @@ class PlayletFortuneWheel(_PluginBase):
         try:
             today_str = datetime.now().strftime('%Y-%m-%d')
             history = self.get_data('history') or []
-            
+
             # 查找今天的数据
             today_data = None
             for item in history:
                 if item.get('date') == today_str:
                     today_data = item
                     break
-            
+
             if today_data:
                 # 合并数据
                 today_data['magic_gain'] += stats.get('magic_gain', 0)
@@ -991,14 +1219,14 @@ class PlayletFortuneWheel(_PluginBase):
                     'gambler_badge_count': stats.get('gambler_badge_count', 0)
                 }
                 history.append(new_item)
-            
+
             # 排序并保留最近60天
             history.sort(key=lambda x: x['date'])
             if len(history) > 60:
                 history = history[-60:]
-            
+
             self.save_data('history', history)
-            
+
         except Exception as e:
             logger.error(f"保存本地数据失败: {str(e)}")
 
@@ -1008,7 +1236,9 @@ class PlayletFortuneWheel(_PluginBase):
                         key = self.get_username() + ':'
 
                     url = f"{self._backend_url.rstrip('/')}{endpoint}"
-                    r = requests.get(url, headers={"X-API-Key": key}, timeout=5)
+                    # 对可能包含中文字符的Token进行编码，保留冒号不转义
+                    safe_key = urllib.parse.quote(str(key), safe=':')
+                    r = requests.get(url, headers={"X-API-Key": safe_key}, timeout=5)
                     try:
                         return r.status_code, r.json()
                     except:
@@ -1018,7 +1248,7 @@ class PlayletFortuneWheel(_PluginBase):
                     return 500, {"message": str(e)}
 
     def get_statistics_data(self):
-        # 1. 尝试使用现有Token获取数据           
+        # 1. 尝试使用现有Token获取数据
         status, data = self.call_backend("/prize-records/month-top", self._auth_token)
 
         if status == 200:
@@ -1080,7 +1310,7 @@ class PlayletFortuneWheel(_PluginBase):
         else:
             logger.error(f"Token验证请求失败: {status} {data}")
             auth_message = f"请求失败: {status} {data}"
-                
+
         return {
             "is_authenticated": False,
             "auth_message": auth_message,
@@ -1106,7 +1336,7 @@ class PlayletFortuneWheel(_PluginBase):
                 match = re.search(r'userdetails\.php\?id=\d+[^>]*>.*?<b[^>]*>(.*?)</b>', res.text, re.S)
                 if not match:
                      match = re.search(r'userdetails\.php\?id=\d+[^>]*>(.*?)</a>', res.text, re.S)
-                
+
                 if match:
                     username = re.sub(r'<[^>]+>', '', match.group(1)).strip()
                     logger.info(f"成功获取用户名: {username}")
@@ -1133,7 +1363,7 @@ class PlayletFortuneWheel(_PluginBase):
                 new_token = detail["token"]
                 msg = detail.get("message", "")
                 logger.info(f"获取到临时Token: {new_token}")
-                        
+
                 # 更新Token
                 if self._auth_token != new_token:
                     self._auth_token = f"{username}:{new_token}"
@@ -1182,7 +1412,7 @@ class PlayletFortuneWheel(_PluginBase):
         """
         拼装插件配置页面，需要返回两块数据：1、页面配置；2、数据结构
         """
-        
+
         return [], {
             "enabled": False,
             "onlyonce": False,
@@ -1201,7 +1431,7 @@ class PlayletFortuneWheel(_PluginBase):
             "announce_medal": True,
             "announce_medal_content": self._default_announce_medal_content,
             "auth_token": "",
-        }  
+        }
 
     def get_service(self) -> List[Dict[str, Any]]:
         """
@@ -1214,6 +1444,15 @@ class PlayletFortuneWheel(_PluginBase):
                 "name": "Playlet幸运转盘 - 自动执行",
                 "trigger": CronTrigger.from_crontab(self._cron),
                 "func": self._auto_task,
+                "kwargs": {}
+            })
+
+        if self._daily_summary_notify:
+            service.append({
+                "id": "playlet_daily_summary",
+                "name": "Playlet幸运转盘 - 每日汇总",
+                "trigger": CronTrigger(minute='*/10'),
+                "func": self._check_daily_summary,
                 "kwargs": {}
             })
 
