@@ -25,7 +25,7 @@ class PlayletFortuneWheel(_PluginBase):
     # 插件图标
     plugin_icon = "https://raw.githubusercontent.com/ArvinChen9539/MoviePilot-Plugins/feature-playlet-fortune-wheel/icons/PlayletFortuneWheel.png"
     # 插件版本
-    plugin_version = "2.0.4"
+    plugin_version = "2.0.5"
     # 插件作者
     plugin_author = "ArvinChen9539"
     # 作者主页
@@ -89,6 +89,7 @@ class PlayletFortuneWheel(_PluginBase):
 
     # 站点操作实例
     _siteoper = None
+    _history_lock = threading.Lock()
 
     def get_render_mode(self) -> Tuple[str, str]:
         """
@@ -611,53 +612,139 @@ class PlayletFortuneWheel(_PluginBase):
 
         threading.Thread(target=_shout_task).start()
 
+    def _upload_data(self, stats: Dict[str, int]) -> bool:
+        """
+        执行上报逻辑（同步），包含重试
+        """
+        for i in range(3):
+            try:
+                logger.info(f"开始上报抽奖数据 (第{i + 1}次尝试)...")
+
+                # 构造上报数据
+                report_data = {
+                    "魔力值": stats.get("magic_gain", 0) - stats.get("magic_loss", 0),
+                    "一等奖": stats.get("first_prize_count", 0),
+                    "赌鬼勋章": stats.get("gambler_badge_count", 0)
+                }
+
+                url = f"{self._backend_url.rstrip('/')}/prize-records/report"
+
+                # 对可能包含中文字符的Token进行编码，避免 latin-1 错误，保留冒号不转义
+                safe_token = urllib.parse.quote(str(self._auth_token), safe=':')
+
+                headers = {
+                    "X-API-Key": safe_token,
+                    "Content-Type": "application/json"
+                }
+
+                # 发送请求
+                response = requests.post(url, json=report_data, headers=headers, timeout=10)
+
+                if response.status_code == 200:
+                    logger.info("数据上报成功")
+                    return True
+                else:
+                    logger.warning(f"数据上报失败: {response.status_code} {response.text}")
+
+            except Exception as e:
+                logger.error(f"数据上报异常: {str(e)}")
+
+            if i < 2:
+                logger.info("2分钟后重试上报...")
+                time.sleep(120)
+
+        return False
+
     def upload_report(self, stats: Dict[str, int]) -> None:
         """
-        上报抽奖结果
+        上报抽奖结果（异步）
         """
         if not self._backend_url or not self._auth_token:
             logger.info("未配置Token，跳过上报")
             return
 
         def _report_task():
-            for i in range(3):
-                try:
-                    logger.info(f"开始上报抽奖数据 (第{i+1}次尝试)...")
-
-                    # 构造上报数据
-                    report_data = {
-                        "魔力值": stats.get("magic_gain", 0) - stats.get("magic_loss", 0),
-                        "一等奖": stats.get("first_prize_count", 0),
-                        "赌鬼勋章": stats.get("gambler_badge_count", 0)
-                    }
-
-                    url = f"{self._backend_url.rstrip('/')}/prize-records/report"
-
-                    # 对可能包含中文字符的Token进行编码，避免 latin-1 错误，保留冒号不转义
-                    safe_token = urllib.parse.quote(str(self._auth_token), safe=':')
-
-                    headers = {
-                        "X-API-Key": safe_token,
-                        "Content-Type": "application/json"
-                    }
-
-                    # 发送请求
-                    response = requests.post(url, json=report_data, headers=headers, timeout=10)
-
-                    if response.status_code == 200:
-                        logger.info("数据上报成功")
-                        return
-                    else:
-                        logger.warning(f"数据上报失败: {response.status_code} {response.text}")
-
-                except Exception as e:
-                    logger.error(f"数据上报异常: {str(e)}")
-
-                if i < 2:
-                    logger.info("2分钟后重试上报...")
-                    time.sleep(120)
+            if not self._upload_data(stats):
+                self._save_failed_report(stats)
 
         threading.Thread(target=_report_task).start()
+
+    def _save_failed_report(self, stats: Dict[str, int]):
+        """
+        保存上报失败的数据
+        """
+        try:
+            with self._history_lock:
+                failed_reports = self.get_data('failed_reports') or []
+                failed_reports.append({
+                    "timestamp": time.time(),
+                    "stats": stats
+                })
+                self.save_data('failed_reports', failed_reports)
+                logger.info("上报失败，已保存到本地待重试")
+        except Exception as e:
+            logger.error(f"保存失败数据异常: {str(e)}")
+
+    def _check_reupload(self):
+        """
+        检查未上报的数据并尝试重新上报
+        仅重试当天的数据，非当天的数据将被清除
+        """
+        try:
+            today_date = datetime.now().date()
+
+            # 1. 清理非当天的数据
+            with self._history_lock:
+                failed_reports = self.get_data('failed_reports') or []
+
+                if not failed_reports:
+                    return
+
+                valid_reports = []
+                expired_count = 0
+
+                for item in failed_reports:
+                    timestamp = item.get("timestamp")
+                    try:
+                        report_date = datetime.fromtimestamp(timestamp).date()
+                        if report_date == today_date:
+                            valid_reports.append(item)
+                        else:
+                            logger.info(f"清除过期未上报数据: {datetime.fromtimestamp(timestamp)}")
+                            expired_count += 1
+                    except Exception as e:
+                        logger.error(f"解析数据时间戳失败: {timestamp}, {e}")
+                        expired_count += 1
+
+                if expired_count > 0:
+                    self.save_data('failed_reports', valid_reports)
+                    failed_reports = valid_reports
+
+            if not failed_reports:
+                return
+
+            # 2. 重试当天的数据
+            # 复制一份进行遍历，避免遍历时修改
+            pending_reports = failed_reports[:]
+
+            logger.info(f"发现 {len(pending_reports)} 条今日未上报数据，尝试重新上报...")
+
+            for item in pending_reports:
+                stats = item.get("stats")
+                timestamp = item.get("timestamp")
+
+                if self._upload_data(stats):
+                    # 上报成功，从列表中移除
+                    with self._history_lock:
+                        current_reports = self.get_data('failed_reports') or []
+                        new_reports = [
+                            r for r in current_reports
+                            if r.get("timestamp") != timestamp
+                        ]
+                        self.save_data('failed_reports', new_reports)
+
+        except Exception as e:
+            logger.error(f"检查补报数据失败: {str(e)}")
 
     def _auto_task(self):
         """
@@ -1029,7 +1116,7 @@ class PlayletFortuneWheel(_PluginBase):
                     username = user.get('username', '未知')
                     # 格式化魔力值
                     points_str = self.format_num(points)
-                    report += f"{medal} {username}: {points_str} 点\n"
+                    report += f"{medal} {username}: {points_str} \n"
 
                 # 最佳评语
                 top_points = drawn_users[0].get('magic_points', 0)
@@ -1051,7 +1138,7 @@ class PlayletFortuneWheel(_PluginBase):
                  points = user.get('magic_points', 0)
                  username = user.get('username', '未知')
                  points_str = self.format_num(points)
-                 report += f"👻 {username}: {points_str} 点\n"
+                 report += f"👻 {username}: {points_str} \n"
                  report += "😭 摸摸头，明天一定会回本的！\n"
                  report += "\n"
                  report += "─" * 14 + "\n"
@@ -1196,39 +1283,40 @@ class PlayletFortuneWheel(_PluginBase):
         保存本地数据，按天合并，最多保留60天
         """
         try:
-            today_str = datetime.now().strftime('%Y-%m-%d')
-            history = self.get_data('history') or []
+            with self._history_lock:
+                today_str = datetime.now().strftime('%Y-%m-%d')
+                history = self.get_data('history') or []
 
-            # 查找今天的数据
-            today_data = None
-            for item in history:
-                if item.get('date') == today_str:
-                    today_data = item
-                    break
+                # 查找今天的数据
+                today_data = None
+                for item in history:
+                    if item.get('date') == today_str:
+                        today_data = item
+                        break
 
-            if today_data:
-                # 合并数据
-                today_data['magic_gain'] += stats.get('magic_gain', 0)
-                today_data['magic_loss'] += stats.get('magic_loss', 0)
-                today_data['first_prize_count'] += stats.get('first_prize_count', 0)
-                today_data['gambler_badge_count'] += stats.get('gambler_badge_count', 0)
-            else:
-                # 新增今天的数据
-                new_item = {
-                    'date': today_str,
-                    'magic_gain': stats.get('magic_gain', 0),
-                    'magic_loss': stats.get('magic_loss', 0),
-                    'first_prize_count': stats.get('first_prize_count', 0),
-                    'gambler_badge_count': stats.get('gambler_badge_count', 0)
-                }
-                history.append(new_item)
+                if today_data:
+                    # 合并数据
+                    today_data['magic_gain'] += stats.get('magic_gain', 0)
+                    today_data['magic_loss'] += stats.get('magic_loss', 0)
+                    today_data['first_prize_count'] += stats.get('first_prize_count', 0)
+                    today_data['gambler_badge_count'] += stats.get('gambler_badge_count', 0)
+                else:
+                    # 新增今天的数据
+                    new_item = {
+                        'date': today_str,
+                        'magic_gain': stats.get('magic_gain', 0),
+                        'magic_loss': stats.get('magic_loss', 0),
+                        'first_prize_count': stats.get('first_prize_count', 0),
+                        'gambler_badge_count': stats.get('gambler_badge_count', 0)
+                    }
+                    history.append(new_item)
 
-            # 排序并保留最近60天
-            history.sort(key=lambda x: x['date'])
-            if len(history) > 60:
-                history = history[-60:]
+                # 排序并保留最近60天
+                history.sort(key=lambda x: x['date'])
+                if len(history) > 60:
+                    history = history[-60:]
 
-            self.save_data('history', history)
+                self.save_data('history', history)
 
         except Exception as e:
             logger.error(f"保存本地数据失败: {str(e)}")
@@ -1436,6 +1524,32 @@ class PlayletFortuneWheel(_PluginBase):
             "auth_token": "",
         }
 
+    def _check_reupload(self):
+        """
+        检查未上报的数据并尝试重新上报
+        """
+        try:
+            with self._history_lock:
+                history = self.get_data('history') or []
+
+            # 遍历历史数据，查找未上报的记录
+            for item in history:
+                # 默认 True，兼容旧数据
+                if not item.get('is_reported', True):
+                    date_str = item.get('date')
+                    logger.info(f"发现未上报数据: {date_str}, 尝试重新上报")
+                    # 构造 stats
+                    stats = {
+                        "magic_gain": item.get("magic_gain", 0),
+                        "magic_loss": item.get("magic_loss", 0),
+                        "first_prize_count": item.get("first_prize_count", 0),
+                        "gambler_badge_count": item.get("gambler_badge_count", 0)
+                    }
+                    self.upload_report(stats, date_str)
+
+        except Exception as e:
+            logger.error(f"检查补报数据失败: {str(e)}")
+
     def get_service(self) -> List[Dict[str, Any]]:
         """
         注册插件公共服务
@@ -1458,6 +1572,15 @@ class PlayletFortuneWheel(_PluginBase):
                 "func": self._check_daily_summary,
                 "kwargs": {}
             })
+
+        # 数据补报检查，固定每10分钟检查一次
+        service.append({
+            "id": "playlet_check_reupload",
+            "name": "Playlet幸运转盘 - 数据补报检查",
+            "trigger": CronTrigger(minute='*/10'),
+            "func": self._check_reupload,
+            "kwargs": {}
+        })
 
         if service:
             return service
