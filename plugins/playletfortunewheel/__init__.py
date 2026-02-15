@@ -25,7 +25,7 @@ class PlayletFortuneWheel(_PluginBase):
     # 插件图标
     plugin_icon = "https://raw.githubusercontent.com/ArvinChen9539/MoviePilot-Plugins/feature-playlet-fortune-wheel/icons/PlayletFortuneWheel.png"
     # 插件版本
-    plugin_version = "2.1.0"
+    plugin_version = "2.1.1"
     # 插件作者
     plugin_author = "ArvinChen9539"
     # 作者主页
@@ -291,6 +291,8 @@ class PlayletFortuneWheel(_PluginBase):
                         results, stats = self.process_raffle_results({"success": True, "results": all_results}, free_count)
                         results.append("")
                         results.append(f"❌ 抽奖失败: {error_msg}")
+                        if "魔力不足" in str(error_msg):
+                            results.append("💡 魔力不足，可前往插件页面领取救济金后再来冲！")
                         results.append("")
                         results.append(f"🎯 剩余次数: {remain_count - len(all_results)}")
                         return results, stats
