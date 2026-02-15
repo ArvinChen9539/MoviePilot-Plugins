@@ -32794,7 +32794,7 @@ var Page_default = /* @__PURE__ */ __plugin_vue_export_helper_default(/* @__PURE
 												_: 1
 											})]),
 											_: 1
-										}), _cache[39] || (_cache[39] = _createTextVNode(" 救济榜 ", -1))]),
+										}), _cache[39] || (_cache[39] = _createTextVNode(" 救济金领取榜 ", -1))]),
 										_: 1
 									})
 								]),
@@ -32999,5 +32999,5 @@ var Page_default = /* @__PURE__ */ __plugin_vue_export_helper_default(/* @__PURE
 			})]);
 		};
 	}
-}), [["__scopeId", "data-v-ce835fdb"]]);
+}), [["__scopeId", "data-v-3201dfdb"]]);
 export { __export as n, Page_default as t };
