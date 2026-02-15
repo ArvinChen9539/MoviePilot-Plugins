@@ -975,6 +975,30 @@ class PlayletFortuneWheel(_PluginBase):
                 "methods": ["POST"],
                 "summary": "生成每日汇总报告",
                 "description": "立即生成每日汇总报告并发送通知",
+            },
+            {
+                "path": "/relief-top",
+                "endpoint": self.get_relief_top,
+                "auth": "bear",
+                "methods": ["GET"],
+                "summary": "获取救济金领取榜单",
+                "description": "获取领取救济金的用户排行榜",
+            },
+            {
+                "path": "/relief-system-status",
+                "endpoint": self.get_relief_system_status,
+                "auth": "bear",
+                "methods": ["GET"],
+                "summary": "获取系统救济金池状态",
+                "description": "获取系统可发放的救济金余额状态",
+            },
+            {
+                "path": "/claim-relief",
+                "endpoint": self.claim_relief,
+                "auth": "bear",
+                "methods": ["POST"],
+                "summary": "领取救济金",
+                "description": "符合条件的低魔力值用户可以领取系统发放的救济金",
             }
         ]
 
@@ -1194,6 +1218,51 @@ class PlayletFortuneWheel(_PluginBase):
             logger.error(f"获取每日魔力值榜单异常: {str(e)}")
             return []
 
+    def get_relief_top(self):
+        """
+        获取救济金榜单
+        """
+        try:
+            status, data = self.call_backend("/prize-records/relief-top", self._auth_token)
+            if status == 200:
+                return data
+            else:
+                logger.error(f"获取救济金榜单失败: {status} {data}")
+                return []
+        except Exception as e:
+            logger.error(f"获取救济金榜单异常: {str(e)}")
+            return []
+
+    def get_relief_system_status(self):
+        """
+        获取系统救济金池状态
+        """
+        try:
+            status, data = self.call_backend("/prize-records/relief-system-status", self._auth_token)
+            if status == 200:
+                return data
+            else:
+                logger.error(f"获取系统救济金池状态失败: {status} {data}")
+                return {"success": False, "message": "获取失败"}
+        except Exception as e:
+            logger.error(f"获取系统救济金池状态异常: {str(e)}")
+            return {"success": False, "message": str(e)}
+
+    def claim_relief(self):
+        """
+        申请领取救济金
+        """
+        try:
+            status, data = self.call_backend("/prize-records/claim-relief", self._auth_token, method="POST")
+            if status == 200:
+                return data
+            else:
+                logger.error(f"申请救济金失败: {status} {data}")
+                return data or {"success": False, "message": f"请求失败: {status}"}
+        except Exception as e:
+            logger.error(f"申请救济金异常: {str(e)}")
+            return {"success": False, "message": str(e)}
+
     def get_token_status(self):
         """
         获取Token状态
@@ -1334,22 +1403,31 @@ class PlayletFortuneWheel(_PluginBase):
         except Exception as e:
             logger.error(f"保存本地数据失败: {str(e)}")
 
-    def call_backend(self,endpoint, key):
-                try:
-                    if not key:
-                        key = self.get_username() + ':'
+    def call_backend(self, endpoint, key, method="GET", json_data=None):
+        try:
+            if not key:
+                key = self.get_username() + ':'
 
-                    url = f"{self._backend_url.rstrip('/')}{endpoint}"
-                    # 对可能包含中文字符的Token进行编码，保留冒号不转义
-                    safe_key = urllib.parse.quote(str(key), safe=':')
-                    r = requests.get(url, headers={"X-API-Key": safe_key}, timeout=5)
-                    try:
-                        return r.status_code, r.json()
-                    except:
-                        return r.status_code, r.json()
-                except Exception as e:
-                    logger.error(f"请求后端接口失败: {str(e)}")
-                    return 500, {"message": str(e)}
+            url = f"{self._backend_url.rstrip('/')}{endpoint}"
+            # 对可能包含中文字符的Token进行编码，保留冒号不转义
+            safe_key = urllib.parse.quote(str(key), safe=':')
+            
+            headers = {"X-API-Key": safe_key}
+            if json_data:
+                headers["Content-Type"] = "application/json"
+
+            if method.upper() == "POST":
+                r = requests.post(url, headers=headers, json=json_data, timeout=10)
+            else:
+                r = requests.get(url, headers=headers, timeout=10)
+
+            try:
+                return r.status_code, r.json()
+            except:
+                return r.status_code, {}
+        except Exception as e:
+            logger.error(f"请求后端接口失败: {str(e)}")
+            return 500, {"message": str(e)}
 
     def get_statistics_data(self):
         # 1. 尝试使用现有Token获取数据

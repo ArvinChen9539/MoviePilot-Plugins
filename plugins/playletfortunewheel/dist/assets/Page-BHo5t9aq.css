@@ -1,0 +1,28 @@
+
+.plugin-page[data-v-73b6fa9c] {
+  max-width: 600px;
+  background-color: #f5f5f5;
+}
+.animate-pulse[data-v-73b6fa9c] {
+  animation: pulse-73b6fa9c 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+@keyframes pulse-73b6fa9c {
+0%, 100% {
+    opacity: 1;
+}
+50% {
+    opacity: 0.5;
+}
+}
+.dense-row[data-v-73b6fa9c] {
+}
+.bg-grey-lighten-4[data-v-73b6fa9c] {
+  background-color: #f5f5f5 !important;
+}
+.chart[data-v-73b6fa9c] {
+  height: 160px;
+  width: 100%;
+}
+.lh-1[data-v-73b6fa9c] {
+  line-height: 1 !important;
+}
