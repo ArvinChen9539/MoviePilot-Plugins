@@ -25,7 +25,7 @@ class PlayletFortuneWheel(_PluginBase):
     # 插件图标
     plugin_icon = "https://raw.githubusercontent.com/ArvinChen9539/MoviePilot-Plugins/feature-playlet-fortune-wheel/icons/PlayletFortuneWheel.png"
     # 插件版本
-    plugin_version = "2.0.5"
+    plugin_version = "2.1.0"
     # 插件作者
     plugin_author = "ArvinChen9539"
     # 作者主页
@@ -90,6 +90,7 @@ class PlayletFortuneWheel(_PluginBase):
     # 站点操作实例
     _siteoper = None
     _history_lock = threading.Lock()
+    _raffle_lock = threading.Lock()
 
     def get_render_mode(self) -> Tuple[str, str]:
         """
@@ -750,56 +751,61 @@ class PlayletFortuneWheel(_PluginBase):
         """
         执行每日自动抽奖
         """
-        try:
-            logger.info("执行每日自动抽奖")
-            results, stats = self.exec_raffle()
+        if self._raffle_lock.locked():
+            logger.info("抽奖任务正在运行中，自动任务跳过")
+            return
 
-            # 生成报告
-            if results:
-                report = self.generate_report(results)
+        with self._raffle_lock:
+            try:
+                logger.info("执行每日自动抽奖")
+                results, stats = self.exec_raffle()
 
-                # 发送通知
-                if self._notify:
-                    self.post_message(
-                        mtype=NotificationType.SiteMessage,
-                        title="【Playlet幸运转盘】每日任务完成",
-                        text=report)
-                self._last_report = report
-                self.update_config({
-                    "onlyonce": False,
-                    "cron": self._cron,
-                    "max_raffle_num": self._max_raffle_num,
-                    "enabled": self._enabled,
-                    "cookie": self._cookie,
-                    "notify": self._notify,
-                    "use_proxy": self._use_proxy,
-                    "only_free": self._only_free,
-                    "auto_cookie": self._auto_cookie,
-                    "last_report": self._last_report,
-                    "announce_first": self._announce_first,
-                    "announce_first_content": self._announce_first_content,
-                    "announce_second": self._announce_second,
-                    "announce_second_content": self._announce_second_content,
-                    "announce_medal": self._announce_medal,
-                    "announce_medal_content": self._announce_medal_content,
-                    "auth_token": self._auth_token,
-                })
-                # 按照\n 分割,然后倒叙再拼接回去
-                log_report = "\n".join(reversed(report.split("\n")))
-                logger.info(
-                    f"报告请点击左上【在新窗口中打开】查看\n\n==============================================\n{log_report}\n==============================================\n\n")
+                # 生成报告
+                if results:
+                    report = self.generate_report(results)
 
-                # 尝试上报数据
-                if stats:
-                    self._save_local_data(stats)
-                    self.upload_report(stats)
+                    # 发送通知
+                    if self._notify:
+                        self.post_message(
+                            mtype=NotificationType.SiteMessage,
+                            title="【Playlet幸运转盘】每日任务完成",
+                            text=report)
+                    self._last_report = report
+                    self.update_config({
+                        "onlyonce": False,
+                        "cron": self._cron,
+                        "max_raffle_num": self._max_raffle_num,
+                        "enabled": self._enabled,
+                        "cookie": self._cookie,
+                        "notify": self._notify,
+                        "use_proxy": self._use_proxy,
+                        "only_free": self._only_free,
+                        "auto_cookie": self._auto_cookie,
+                        "last_report": self._last_report,
+                        "announce_first": self._announce_first,
+                        "announce_first_content": self._announce_first_content,
+                        "announce_second": self._announce_second,
+                        "announce_second_content": self._announce_second_content,
+                        "announce_medal": self._announce_medal,
+                        "announce_medal_content": self._announce_medal_content,
+                        "auth_token": self._auth_token,
+                    })
+                    # 按照\n 分割,然后倒叙再拼接回去
+                    log_report = "\n".join(reversed(report.split("\n")))
+                    logger.info(
+                        f"报告请点击左上【在新窗口中打开】查看\n\n==============================================\n{log_report}\n==============================================\n\n")
 
-            else:
-                logger.info("未抽奖，不发送通知")
+                    # 尝试上报数据
+                    if stats:
+                        self._save_local_data(stats)
+                        self.upload_report(stats)
 
-        except Exception as e:
-            logger.error(f"执行每日抽奖任务时发生异常: {str(e)}")
-            logger.error("异常详情: ", exc_info=True)
+                else:
+                    logger.info("未抽奖，不发送通知")
+
+            except Exception as e:
+                logger.error(f"执行每日抽奖任务时发生异常: {str(e)}")
+                logger.error("异常详情: ", exc_info=True)
 
     def generate_report(self, results: List[str]) -> str:
         """
@@ -969,6 +975,30 @@ class PlayletFortuneWheel(_PluginBase):
                 "methods": ["POST"],
                 "summary": "生成每日汇总报告",
                 "description": "立即生成每日汇总报告并发送通知",
+            },
+            {
+                "path": "/relief-top",
+                "endpoint": self.get_relief_top,
+                "auth": "bear",
+                "methods": ["GET"],
+                "summary": "获取救济金领取榜单",
+                "description": "获取领取救济金的用户排行榜",
+            },
+            {
+                "path": "/relief-system-status",
+                "endpoint": self.get_relief_system_status,
+                "auth": "bear",
+                "methods": ["GET"],
+                "summary": "获取系统救济金池状态",
+                "description": "获取系统可发放的救济金余额状态",
+            },
+            {
+                "path": "/claim-relief",
+                "endpoint": self.claim_relief,
+                "auth": "bear",
+                "methods": ["POST"],
+                "summary": "领取救济金",
+                "description": "符合条件的低魔力值用户可以领取系统发放的救济金",
             }
         ]
 
@@ -1188,6 +1218,51 @@ class PlayletFortuneWheel(_PluginBase):
             logger.error(f"获取每日魔力值榜单异常: {str(e)}")
             return []
 
+    def get_relief_top(self):
+        """
+        获取救济金榜单
+        """
+        try:
+            status, data = self.call_backend("/prize-records/relief-top", self._auth_token)
+            if status == 200:
+                return data
+            else:
+                logger.error(f"获取救济金榜单失败: {status} {data}")
+                return []
+        except Exception as e:
+            logger.error(f"获取救济金榜单异常: {str(e)}")
+            return []
+
+    def get_relief_system_status(self):
+        """
+        获取系统救济金池状态
+        """
+        try:
+            status, data = self.call_backend("/prize-records/relief-system-status", self._auth_token)
+            if status == 200:
+                return data
+            else:
+                logger.error(f"获取系统救济金池状态失败: {status} {data}")
+                return {"success": False, "message": "获取失败"}
+        except Exception as e:
+            logger.error(f"获取系统救济金池状态异常: {str(e)}")
+            return {"success": False, "message": str(e)}
+
+    def claim_relief(self):
+        """
+        申请领取救济金
+        """
+        try:
+            status, data = self.call_backend("/prize-records/claim-relief", self._auth_token, method="POST")
+            if status == 200:
+                return data
+            else:
+                logger.error(f"申请救济金失败: {status} {data}")
+                return data or {"success": False, "message": f"请求失败: {status}"}
+        except Exception as e:
+            logger.error(f"申请救济金异常: {str(e)}")
+            return {"success": False, "message": str(e)}
+
     def get_token_status(self):
         """
         获取Token状态
@@ -1200,72 +1275,79 @@ class PlayletFortuneWheel(_PluginBase):
         """
         API endpoint to execute raffle immediately
         """
-        try:
-            logger.info("收到API请求：立即执行抽奖")
-            results, stats = self.exec_raffle()
-
-            # 如果有抽奖结果，保存数据并上报
-            if results:
-                # 生成简报
-                report = self.generate_report(results)
-
-                # 发送通知
-                if self._notify:
-                    self.post_message(
-                        mtype=NotificationType.SiteMessage,
-                        title="【Playlet幸运转盘】每日任务完成",
-                        text=report)
-
-                self._last_report = report
-                # 更新配置中的报告
-                self.update_config({
-                    "onlyonce": False,
-                    "cron": self._cron,
-                    "max_raffle_num": self._max_raffle_num,
-                    "enabled": self._enabled,
-                    "cookie": self._cookie,
-                    "notify": self._notify,
-                    "use_proxy": self._use_proxy,
-                    "only_free": self._only_free,
-                    "auto_cookie": self._auto_cookie,
-                    "last_report": self._last_report,
-                    "announce_first": self._announce_first,
-                    "announce_first_content": self._announce_first_content,
-                    "announce_second": self._announce_second,
-                    "announce_second_content": self._announce_second_content,
-                    "announce_medal": self._announce_medal,
-                    "announce_medal_content": self._announce_medal_content,
-                    "auth_token": self._auth_token,
-                })
-
-                # 按照\n 分割,然后倒叙再拼接回去
-                log_report = "\n".join(reversed(report.split("\n")))
-                logger.info(
-                    f"报告请点击左上【在新窗口中打开】查看\n\n==============================================\n{log_report}\n==============================================\n\n")
-
-                if stats:
-                    self._save_local_data(stats)
-                    self.upload_report(stats)
-
-                return {
-                    "success": True,
-                    "message": "抽奖执行完成",
-                    "results": results,
-                    "stats": stats
-                }
-            else:
-                return {
-                    "success": True,
-                    "message": "今日已无抽奖次数",
-                    "results": [],
-                    "stats": {}
-                }
-        except Exception as e:
-            logger.error(f"执行抽奖失败: {str(e)}")
+        if self._raffle_lock.locked():
             return {
                 "success": False,
-                "message": f"执行失败: {str(e)}"
+                "message": "抽奖任务正在运行中，请稍后再试"
             }
+
+        with self._raffle_lock:
+            try:
+                logger.info("收到API请求：立即执行抽奖")
+                results, stats = self.exec_raffle()
+
+                # 如果有抽奖结果，保存数据并上报
+                if results:
+                    # 生成简报
+                    report = self.generate_report(results)
+
+                    # 发送通知
+                    if self._notify:
+                        self.post_message(
+                            mtype=NotificationType.SiteMessage,
+                            title="【Playlet幸运转盘】每日任务完成",
+                            text=report)
+
+                    self._last_report = report
+                    # 更新配置中的报告
+                    self.update_config({
+                        "onlyonce": False,
+                        "cron": self._cron,
+                        "max_raffle_num": self._max_raffle_num,
+                        "enabled": self._enabled,
+                        "cookie": self._cookie,
+                        "notify": self._notify,
+                        "use_proxy": self._use_proxy,
+                        "only_free": self._only_free,
+                        "auto_cookie": self._auto_cookie,
+                        "last_report": self._last_report,
+                        "announce_first": self._announce_first,
+                        "announce_first_content": self._announce_first_content,
+                        "announce_second": self._announce_second,
+                        "announce_second_content": self._announce_second_content,
+                        "announce_medal": self._announce_medal,
+                        "announce_medal_content": self._announce_medal_content,
+                        "auth_token": self._auth_token,
+                    })
+
+                    # 按照\n 分割,然后倒叙再拼接回去
+                    log_report = "\n".join(reversed(report.split("\n")))
+                    logger.info(
+                        f"报告请点击左上【在新窗口中打开】查看\n\n==============================================\n{log_report}\n==============================================\n\n")
+
+                    if stats:
+                        self._save_local_data(stats)
+                        self.upload_report(stats)
+
+                    return {
+                        "success": True,
+                        "message": "抽奖执行完成",
+                        "results": results,
+                        "stats": stats
+                    }
+                else:
+                    return {
+                        "success": True,
+                        "message": "今日已无抽奖次数",
+                        "results": [],
+                        "stats": {}
+                    }
+            except Exception as e:
+                logger.error(f"执行抽奖失败: {str(e)}")
+                return {
+                    "success": False,
+                    "message": f"执行失败: {str(e)}"
+                }
 
     def get_history_data_api(self):
         """
@@ -1321,22 +1403,31 @@ class PlayletFortuneWheel(_PluginBase):
         except Exception as e:
             logger.error(f"保存本地数据失败: {str(e)}")
 
-    def call_backend(self,endpoint, key):
-                try:
-                    if not key:
-                        key = self.get_username() + ':'
+    def call_backend(self, endpoint, key, method="GET", json_data=None):
+        try:
+            if not key:
+                key = self.get_username() + ':'
 
-                    url = f"{self._backend_url.rstrip('/')}{endpoint}"
-                    # 对可能包含中文字符的Token进行编码，保留冒号不转义
-                    safe_key = urllib.parse.quote(str(key), safe=':')
-                    r = requests.get(url, headers={"X-API-Key": safe_key}, timeout=5)
-                    try:
-                        return r.status_code, r.json()
-                    except:
-                        return r.status_code, r.json()
-                except Exception as e:
-                    logger.error(f"请求后端接口失败: {str(e)}")
-                    return 500, {"message": str(e)}
+            url = f"{self._backend_url.rstrip('/')}{endpoint}"
+            # 对可能包含中文字符的Token进行编码，保留冒号不转义
+            safe_key = urllib.parse.quote(str(key), safe=':')
+            
+            headers = {"X-API-Key": safe_key}
+            if json_data:
+                headers["Content-Type"] = "application/json"
+
+            if method.upper() == "POST":
+                r = requests.post(url, headers=headers, json=json_data, timeout=10)
+            else:
+                r = requests.get(url, headers=headers, timeout=10)
+
+            try:
+                return r.status_code, r.json()
+            except:
+                return r.status_code, {}
+        except Exception as e:
+            logger.error(f"请求后端接口失败: {str(e)}")
+            return 500, {"message": str(e)}
 
     def get_statistics_data(self):
         # 1. 尝试使用现有Token获取数据

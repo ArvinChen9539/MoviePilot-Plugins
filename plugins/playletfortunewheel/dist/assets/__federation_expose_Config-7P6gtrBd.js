@@ -621,7 +621,7 @@ var Config_default = /* @__PURE__ */ __plugin_vue_export_helper_default(/* @__PU
 													loading: generatingDailyReport.value,
 													onClick: generateDailyReport
 												}, {
-													default: _withCtx(() => [..._cache[37] || (_cache[37] = [_createTextVNode(" 立即生成并发送 ", -1)])]),
+													default: _withCtx(() => [..._cache[37] || (_cache[37] = [_createTextVNode(" 立即生成 ", -1)])]),
 													_: 1
 												}, 8, ["loading"])]), _createElementVNode("div", _hoisted_6, [_createElementVNode("div", _hoisted_7, [dailyReportPreview.value ? (_openBlock(), _createElementBlock("div", _hoisted_8, _toDisplayString(dailyReportPreview.value), 1)) : (_openBlock(), _createElementBlock("div", _hoisted_9, " 暂无每日汇总报告预览，请点击上方按钮生成。 "))])])]),
 												_: 1
@@ -675,5 +675,5 @@ var Config_default = /* @__PURE__ */ __plugin_vue_export_helper_default(/* @__PU
 			})]);
 		};
 	}
-}), [["__scopeId", "data-v-9e4bc74e"]]);
+}), [["__scopeId", "data-v-1b33ede8"]]);
 export { Config_default as default };
