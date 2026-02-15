@@ -1,4 +1,4 @@
-import { t as Page_default } from "./Page-BLNajcgH.js";
+import { t as Page_default } from "./Page-KB99FtZY.js";
 import "./_virtual___federation_fn_import-CGvRSdYS.js";
 import "./preload-helper-D8ypjKNi.js";
 import "./_plugin-vue_export-helper-BtmITFDH.js";

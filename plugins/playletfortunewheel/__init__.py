@@ -291,6 +291,8 @@ class PlayletFortuneWheel(_PluginBase):
                         results, stats = self.process_raffle_results({"success": True, "results": all_results}, free_count)
                         results.append("")
                         results.append(f"❌ 抽奖失败: {error_msg}")
+                        if "魔力不足" in str(error_msg):
+                            results.append("💡 魔力不足，可前往插件页面领取救济金后再来冲！")
                         results.append("")
                         results.append(f"🎯 剩余次数: {remain_count - len(all_results)}")
                         return results, stats
