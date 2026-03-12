@@ -114,53 +114,62 @@ var RankGrid_default = /* @__PURE__ */ _defineComponent$2({
 	}
 });
 var { defineComponent: _defineComponent$1 } = await importShared("vue");
-var { renderList: _renderList$1, Fragment: _Fragment$1, openBlock: _openBlock$1, createElementBlock: _createElementBlock$1, createCommentVNode: _createCommentVNode$1, toDisplayString: _toDisplayString$1, createElementVNode: _createElementVNode$1, resolveComponent: _resolveComponent$1, createBlock: _createBlock$1, withCtx: _withCtx$1, createVNode: _createVNode$1 } = await importShared("vue");
-var _hoisted_1$1 = {
+var { createElementVNode: _createElementVNode$1, toDisplayString: _toDisplayString$1, resolveComponent: _resolveComponent$1, createVNode: _createVNode$1, withCtx: _withCtx$1, openBlock: _openBlock$1, createBlock: _createBlock$1, createCommentVNode: _createCommentVNode$1, renderList: _renderList$1, Fragment: _Fragment$1, createElementBlock: _createElementBlock$1 } = await importShared("vue");
+var _hoisted_1$1 = { class: "d-flex align-center justify-space-between w-100" };
+var _hoisted_2$1 = { class: "text-subtitle-2 font-weight-bold" };
+var _hoisted_3$1 = { class: "d-flex align-center" };
+var _hoisted_4$1 = { class: "text-subtitle-2 font-weight-black text-primary mr-1" };
+var _hoisted_5$1 = {
 	class: "d-flex align-center justify-center mr-3",
 	style: { "width": "32px" }
 };
-var _hoisted_2$1 = {
+var _hoisted_6$1 = {
 	key: 0,
 	class: "text-h5"
 };
-var _hoisted_3$1 = {
+var _hoisted_7$1 = {
 	key: 1,
 	class: "text-h5"
 };
-var _hoisted_4$1 = {
+var _hoisted_8$1 = {
 	key: 2,
 	class: "text-h5"
 };
-var _hoisted_5$1 = {
+var _hoisted_9$1 = {
 	key: 3,
 	class: "text-body-2 font-weight-bold text-medium-emphasis"
 };
-var _hoisted_6$1 = { class: "d-flex align-center justify-space-between w-100" };
-var _hoisted_7$1 = { class: "d-flex flex-column" };
-var _hoisted_8$1 = {
+var _hoisted_10$1 = { class: "d-flex align-center justify-space-between w-100" };
+var _hoisted_11$1 = { class: "d-flex flex-column" };
+var _hoisted_12$1 = {
 	class: "text-subtitle-2 font-weight-bold text-truncate",
 	style: { "max-width": "120px" }
 };
-var _hoisted_9$1 = { class: "text-caption text-medium-emphasis" };
-var _hoisted_10$1 = { key: 0 };
-var _hoisted_11$1 = { key: 1 };
-var _hoisted_12$1 = { class: "d-flex align-center" };
-var _hoisted_13$1 = {
+var _hoisted_13$1 = { class: "text-caption text-medium-emphasis" };
+var _hoisted_14$1 = { key: 0 };
+var _hoisted_15$1 = { key: 1 };
+var _hoisted_16$1 = { class: "d-flex align-center" };
+var _hoisted_17$1 = {
 	key: 0,
 	class: "text-subtitle-2 font-weight-black text-primary mr-1"
 };
-var _hoisted_14$1 = {
+var _hoisted_18$1 = {
 	key: 1,
 	class: "text-caption font-weight-bold text-medium-emphasis mr-1"
 };
-var _hoisted_15$1 = {
+var _hoisted_19$1 = {
 	key: 1,
 	class: "text-center pa-8 text-grey"
 };
+var { computed: computed$2 } = await importShared("vue");
 var MagicList_default = /* @__PURE__ */ _defineComponent$1({
 	__name: "MagicList",
 	props: { items: {} },
 	setup(__props) {
+		const props = __props;
+		const showReliefSummary = computed$2(() => props.items?.length > 0 && props.items.some((i) => i.relief_count !== void 0));
+		const totalReliefCount = computed$2(() => props.items.reduce((sum, item) => sum + (item.relief_count || 0), 0));
+		const totalReliefMagic = computed$2(() => props.items.reduce((sum, item) => sum + (item.magic_points || 0), 0));
 		function formatNum(num) {
 			if (num === null || num === void 0) return "";
 			const absNum = Math.abs(num);
@@ -173,6 +182,20 @@ var MagicList_default = /* @__PURE__ */ _defineComponent$1({
 			return num.toString();
 		}
 		function formatTime(timeStr) {
+			if (!timeStr) return "";
+			try {
+				const date = new Date(timeStr);
+				if (isNaN(date.getTime())) return timeStr.split(" ")[1] || timeStr;
+				return date.toLocaleTimeString("zh-CN", {
+					hour: "2-digit",
+					minute: "2-digit",
+					second: "2-digit"
+				});
+			} catch (e$1) {
+				return timeStr;
+			}
+		}
+		function formatReliefTime(timeStr) {
 			if (!timeStr) return "";
 			try {
 				const raw = timeStr;
@@ -198,14 +221,33 @@ var MagicList_default = /* @__PURE__ */ _defineComponent$1({
 			const _component_v_list_item = _resolveComponent$1("v-list-item");
 			const _component_v_list = _resolveComponent$1("v-list");
 			return _openBlock$1(), _createBlock$1(_component_v_list, { class: "bg-transparent pa-0" }, {
-				default: _withCtx$1(() => [__props.items && __props.items.length > 0 ? (_openBlock$1(true), _createElementBlock$1(_Fragment$1, { key: 0 }, _renderList$1(__props.items, (item, index) => {
+				default: _withCtx$1(() => [__props.items && __props.items.length > 0 ? (_openBlock$1(), _createElementBlock$1(_Fragment$1, { key: 0 }, [showReliefSummary.value ? (_openBlock$1(), _createBlock$1(_component_v_list_item, {
+					key: 0,
+					class: "mb-2 rounded-lg bg-surface elevation-1",
+					density: "compact"
+				}, {
+					prepend: _withCtx$1(() => [..._cache[0] || (_cache[0] = [_createElementVNode$1("div", {
+						class: "d-flex align-center justify-center mr-3",
+						style: { "width": "32px" }
+					}, [_createElementVNode$1("span", { class: "text-h5" }, "📊")], -1)])]),
+					default: _withCtx$1(() => [_createElementVNode$1("div", _hoisted_1$1, [_createElementVNode$1("div", _hoisted_2$1, " 救济总次数: " + _toDisplayString$1(totalReliefCount.value), 1), _createElementVNode$1("div", _hoisted_3$1, [
+						_cache[1] || (_cache[1] = _createElementVNode$1("div", { class: "text-caption text-medium-emphasis" }, "救济总魔力", -1)),
+						_createElementVNode$1("div", _hoisted_4$1, _toDisplayString$1(formatNum(totalReliefMagic.value)), 1),
+						_createVNode$1(_component_v_icon, {
+							icon: "mdi-creation",
+							size: "x-small",
+							color: "primary"
+						})
+					])])]),
+					_: 1
+				})) : _createCommentVNode$1("", true), (_openBlock$1(true), _createElementBlock$1(_Fragment$1, null, _renderList$1(__props.items, (item, index) => {
 					return _openBlock$1(), _createBlock$1(_component_v_list_item, {
 						key: index,
 						class: "mb-2 rounded-lg bg-surface elevation-1",
 						density: "compact"
 					}, {
-						prepend: _withCtx$1(() => [_createElementVNode$1("div", _hoisted_1$1, [index === 0 ? (_openBlock$1(), _createElementBlock$1("span", _hoisted_2$1, "🥇")) : index === 1 ? (_openBlock$1(), _createElementBlock$1("span", _hoisted_3$1, "🥈")) : index === 2 ? (_openBlock$1(), _createElementBlock$1("span", _hoisted_4$1, "🥉")) : (_openBlock$1(), _createElementBlock$1("span", _hoisted_5$1, _toDisplayString$1(index + 1), 1))])]),
-						default: _withCtx$1(() => [_createElementVNode$1("div", _hoisted_6$1, [_createElementVNode$1("div", _hoisted_7$1, [_createElementVNode$1("div", _hoisted_8$1, _toDisplayString$1(item.username), 1), _createElementVNode$1("div", _hoisted_9$1, [item.relief_count !== void 0 ? (_openBlock$1(), _createElementBlock$1("span", _hoisted_10$1, " 救济 " + _toDisplayString$1(item.relief_count) + " 次 · 最后 " + _toDisplayString$1(formatTime(item.time)), 1)) : (_openBlock$1(), _createElementBlock$1("span", _hoisted_11$1, _toDisplayString$1(formatTime(item.time)), 1))])]), _createElementVNode$1("div", _hoisted_12$1, [item.magic_points !== null && item.magic_points !== void 0 ? (_openBlock$1(), _createElementBlock$1("div", _hoisted_13$1, _toDisplayString$1(formatNum(item.magic_points)), 1)) : (_openBlock$1(), _createElementBlock$1("div", _hoisted_14$1, " 还未发力 ")), item.magic_points !== null && item.magic_points !== void 0 ? (_openBlock$1(), _createBlock$1(_component_v_icon, {
+						prepend: _withCtx$1(() => [_createElementVNode$1("div", _hoisted_5$1, [index === 0 ? (_openBlock$1(), _createElementBlock$1("span", _hoisted_6$1, "🥇")) : index === 1 ? (_openBlock$1(), _createElementBlock$1("span", _hoisted_7$1, "🥈")) : index === 2 ? (_openBlock$1(), _createElementBlock$1("span", _hoisted_8$1, "🥉")) : (_openBlock$1(), _createElementBlock$1("span", _hoisted_9$1, _toDisplayString$1(index + 1), 1))])]),
+						default: _withCtx$1(() => [_createElementVNode$1("div", _hoisted_10$1, [_createElementVNode$1("div", _hoisted_11$1, [_createElementVNode$1("div", _hoisted_12$1, _toDisplayString$1(item.username), 1), _createElementVNode$1("div", _hoisted_13$1, [item.relief_count !== void 0 ? (_openBlock$1(), _createElementBlock$1("span", _hoisted_14$1, " 救济 " + _toDisplayString$1(item.relief_count) + " 次 · 最后 " + _toDisplayString$1(formatReliefTime(item.time)), 1)) : (_openBlock$1(), _createElementBlock$1("span", _hoisted_15$1, _toDisplayString$1(formatTime(item.time)), 1))])]), _createElementVNode$1("div", _hoisted_16$1, [item.magic_points !== null && item.magic_points !== void 0 ? (_openBlock$1(), _createElementBlock$1("div", _hoisted_17$1, _toDisplayString$1(formatNum(item.magic_points)), 1)) : (_openBlock$1(), _createElementBlock$1("div", _hoisted_18$1, " 还未发力 ")), item.magic_points !== null && item.magic_points !== void 0 ? (_openBlock$1(), _createBlock$1(_component_v_icon, {
 							key: 2,
 							icon: "mdi-creation",
 							size: "x-small",
@@ -213,11 +255,11 @@ var MagicList_default = /* @__PURE__ */ _defineComponent$1({
 						})) : _createCommentVNode$1("", true)])])]),
 						_: 2
 					}, 1024);
-				}), 128)) : (_openBlock$1(), _createElementBlock$1("div", _hoisted_15$1, [_createVNode$1(_component_v_icon, {
+				}), 128))], 64)) : (_openBlock$1(), _createElementBlock$1("div", _hoisted_19$1, [_createVNode$1(_component_v_icon, {
 					icon: "mdi-format-list-bulleted-type",
 					size: "48",
 					class: "mb-2 opacity-50"
-				}), _cache[0] || (_cache[0] = _createElementVNode$1("div", { class: "text-body-2" }, "暂无上榜数据", -1))]))]),
+				}), _cache[2] || (_cache[2] = _createElementVNode$1("div", { class: "text-body-2" }, "暂无上榜数据", -1))]))]),
 				_: 1
 			});
 		};
@@ -32877,7 +32919,7 @@ var Page_default = /* @__PURE__ */ __plugin_vue_export_helper_default(/* @__PURE
 												}),
 												_cache[42] || (_cache[42] = _createElementVNode("div", { class: "text-body-2 text-medium-emphasis mb-4" }, " 请点击下方按钮，发送主题为“抽奖认证”，内容为上述Token，系统将在5分钟内完成认证。 ", -1)),
 												_createVNode(_component_v_btn, {
-													href: "https://playletpt.xyz/sendmessage.php?receiver=11117",
+													href: "https://playlet.cc/sendmessage.php?receiver=11117",
 													target: "_blank",
 													color: "primary",
 													size: "large",
@@ -32999,5 +33041,5 @@ var Page_default = /* @__PURE__ */ __plugin_vue_export_helper_default(/* @__PURE
 			})]);
 		};
 	}
-}), [["__scopeId", "data-v-3201dfdb"]]);
+}), [["__scopeId", "data-v-eb32c76f"]]);
 export { __export as n, Page_default as t };

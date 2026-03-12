@@ -1,0 +1,27 @@
+
+.plugin-page[data-v-eb32c76f] {
+  background-color: #f5f5f5;
+}
+.animate-pulse[data-v-eb32c76f] {
+  animation: pulse-eb32c76f 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+@keyframes pulse-eb32c76f {
+0%, 100% {
+    opacity: 1;
+}
+50% {
+    opacity: 0.5;
+}
+}
+.dense-row[data-v-eb32c76f] {
+}
+.bg-grey-lighten-4[data-v-eb32c76f] {
+  background-color: #f5f5f5 !important;
+}
+.chart[data-v-eb32c76f] {
+  height: 160px;
+  width: 100%;
+}
+.lh-1[data-v-eb32c76f] {
+  line-height: 1 !important;
+}
