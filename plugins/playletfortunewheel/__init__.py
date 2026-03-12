@@ -25,7 +25,7 @@ class PlayletFortuneWheel(_PluginBase):
     # 插件图标
     plugin_icon = "https://raw.githubusercontent.com/ArvinChen9539/MoviePilot-Plugins/feature-playlet-fortune-wheel/icons/PlayletFortuneWheel.png"
     # 插件版本
-    plugin_version = "2.1.3"
+    plugin_version = "2.1.4"
     # 插件作者
     plugin_author = "ArvinChen9539"
     # 作者主页
@@ -82,7 +82,7 @@ class PlayletFortuneWheel(_PluginBase):
     _cron: Optional[str] = None
     _max_raffle_num: Optional[int] = None
 
-    _site_url: str = "https://playletpt.xyz/"
+    _site_url: str = "https://playlet.cc/"
 
     # 定时器
     _scheduler: Optional[BackgroundScheduler] = None
@@ -137,6 +137,9 @@ class PlayletFortuneWheel(_PluginBase):
             # 处理自动获取cookie
             if self._auto_cookie:
                 self._cookie = self.get_site_cookie()
+                # 兼容旧站点域名
+                if not self._cookie:
+                    self._cookie = self.get_site_cookie("playletpt.xyz")
             else:
                 self._cookie = config.get("cookie")
 
@@ -855,7 +858,7 @@ class PlayletFortuneWheel(_PluginBase):
             logger.error(f"获取代理设置出错: {str(e)}")
             return None
 
-    def get_site_cookie(self, domain: str = 'playletpt.xyz') -> str:
+    def get_site_cookie(self, domain: str = 'playlet.cc') -> str:
         """
         获取站点cookie
 
@@ -1125,6 +1128,8 @@ class PlayletFortuneWheel(_PluginBase):
 
             report = f"🎡 Playlet 伙伴风云榜 🎡\n"
             report += f"📅 {today_str}\n"
+            report += "━━━━━━━━━━━━━━\n"
+            report += "📢!!!近期站点将要更换域名以及tracker地址,请留意站点公告\n"
             report += "━━━━━━━━━━━━━━\n"
 
             # 概况
@@ -1413,7 +1418,7 @@ class PlayletFortuneWheel(_PluginBase):
             url = f"{self._backend_url.rstrip('/')}{endpoint}"
             # 对可能包含中文字符的Token进行编码，保留冒号不转义
             safe_key = urllib.parse.quote(str(key), safe=':')
-            
+
             headers = {"X-API-Key": safe_key}
             if json_data:
                 headers["Content-Type"] = "application/json"

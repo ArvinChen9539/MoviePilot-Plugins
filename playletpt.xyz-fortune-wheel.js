@@ -4,7 +4,7 @@
 // @version      0.2
 // @description  在 Playlet 幸运转盘页面增加一键抽奖、自动喊话、历史报告功能
 // @author       Demo
-// @match        https://playletpt.xyz/fortune-wheel.php
+// @match        https://playlet.cc/fortune-wheel.php
 // @grant        none
 // ==/UserScript==
 
@@ -239,7 +239,7 @@
     function init() {
         console.log("Playlet 抽奖脚本初始化...");
         if (document.querySelector('.mp-custom-spin-btn')) return;
-        
+
         // 尝试多种选择器以防类名变化
         const targetBtn = document.querySelector('.spin-btn--primary') || document.querySelector('.spin-btn');
         if (!targetBtn) {
@@ -255,16 +255,16 @@
             e.preventDefault();
             e.stopPropagation();
             console.log("点击一键抽奖按钮 (开始)");
-            
+
             // 使用 setTimeout 异步调用，防止阻塞或因页面状态改变导致的中断
             setTimeout(() => {
                 console.log("异步调用 showSettingsModal...");
                 showSettingsModal();
             }, 0);
-            
+
             console.log("点击一键抽奖按钮 (结束)");
         }, true);
-        
+
         targetBtn.parentNode.insertBefore(newBtn, targetBtn.nextSibling);
         console.log("一键抽奖按钮已添加");
     }
@@ -290,7 +290,7 @@
             overlay.id = 'mp-settings-modal';
             // 转义报告内容中的 HTML，防止破坏布局
             const escapedReport = lastReport.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-            
+
             console.log("正在生成弹窗 HTML...");
             overlay.innerHTML = `
                 <div class="mp-modal-container">
@@ -360,7 +360,7 @@
                 // 保存设置
                 storage.saveSettings({ onlyFree, shoutFirst, shoutSecond, shoutMedal });
                 document.body.removeChild(overlay);
-                
+
                 startRaffle(count, onlyFree, { shoutFirst, shoutSecond, shoutMedal });
             };
             console.log("弹窗显示成功");
@@ -376,7 +376,7 @@
         const overlay = document.createElement('div');
         overlay.className = 'mp-modal-overlay';
         overlay.style.zIndex = "10002"; // 比设置弹窗更高
-        
+
         overlay.innerHTML = `
             <div class="mp-modal-container">
                 <div class="mp-modal-title">历史抽奖报告 (最近2个月)</div>
@@ -444,7 +444,7 @@
                 try {
                     const response = await fetch(CONFIG.spinUrl, { method: 'POST', body: formData });
                     const json = await response.json();
-                    
+
                     if (!json.success) {
                         allResults.push(`❌ 失败: ${json.message || "未知错误"}`);
                         break;
@@ -453,7 +453,7 @@
                     allResults.push(...json.results);
                     completedCount += num;
                     execCount -= num;
-                    
+
                     const percent = (completedCount / totalTarget) * 100;
                     document.getElementById('spin-progress-fill').style.width = `${percent}%`;
                     document.getElementById('spin-progress-text').innerText = `${completedCount}/${totalTarget}`;
@@ -464,7 +464,7 @@
                     if (errorNum > 5) break;
                     updateStatus(`网络异常 (${errorNum}/5)，重试中...`);
                     await sleep(2000);
-                    continue; 
+                    continue;
                 }
 
                 if (execCount > 0) await sleep(CONFIG.interval);
@@ -486,7 +486,7 @@
         let results = [];
         const validResults = [];
         const errorMessages = [];
-        
+
         raffleResults.forEach(item => {
             if (typeof item === 'string') errorMessages.push(item);
             else validResults.push(item);
@@ -499,13 +499,13 @@
         const totalCount = validResults.length;
         let winCount = 0;
         let totalBonusEarned = 0;
-        
+
         validResults.forEach(item => {
             const result = item.result || {};
             const prize = item.prize || {};
             const grade = item.grade || "未知等级";
             gradeStats[grade] = (gradeStats[grade] || 0) + 1;
-            
+
             const status = result.status || "";
             let prizeType = "nothing";
             if (status !== "nothing") {
@@ -514,7 +514,7 @@
                 let value = Number(result.value) || 1;
                 const unit = result.unit || "未知";
                 const detailKey = `${prize.name || "未知"} (${unit})`;
-                
+
                 if (!prizeStats[prizeType]) {
                     prizeStats[prizeType] = { count: 0, details: {}, icon: TYPE_ICONS[prizeType] || "🎁" };
                 }
