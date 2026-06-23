@@ -54,12 +54,6 @@ var Config_default = /* @__PURE__ */ __plugin_vue_export_helper_default(/* @__PU
 			cron: "",
 			max_raffle_num: null,
 			last_report: "",
-			announce_first: true,
-			announce_first_content: "🎉🎉🎉🥇😊",
-			announce_second: true,
-			announce_second_content: "🎉🎉🎉🥈🙂",
-			announce_medal: true,
-			announce_medal_content: "🎉🎉🎉👹😱我是大赌鬼",
 			auth_token: "",
 			daily_summary_notify: true,
 			daily_summary_time: "11:00"
@@ -143,13 +137,13 @@ var Config_default = /* @__PURE__ */ __plugin_vue_export_helper_default(/* @__PU
 							onClick: notifyClose
 						}, {
 							default: _withCtx(() => [_createVNode(_component_v_icon, { left: "" }, {
-								default: _withCtx(() => [..._cache[22] || (_cache[22] = [_createTextVNode("mdi-close", -1)])]),
+								default: _withCtx(() => [..._cache[16] || (_cache[16] = [_createTextVNode("mdi-close", -1)])]),
 								_: 1
 							})]),
 							_: 1
 						})]),
 						default: _withCtx(() => [_createVNode(_component_v_card_title, null, {
-							default: _withCtx(() => [..._cache[21] || (_cache[21] = [_createTextVNode("插件配置", -1)])]),
+							default: _withCtx(() => [..._cache[15] || (_cache[15] = [_createTextVNode("插件配置", -1)])]),
 							_: 1
 						})]),
 						_: 1
@@ -169,7 +163,7 @@ var Config_default = /* @__PURE__ */ __plugin_vue_export_helper_default(/* @__PU
 							ref_key: "form",
 							ref: form,
 							modelValue: isFormValid.value,
-							"onUpdate:modelValue": _cache[20] || (_cache[20] = ($event) => isFormValid.value = $event),
+							"onUpdate:modelValue": _cache[14] || (_cache[14] = ($event) => isFormValid.value = $event),
 							onSubmit: _withModifiers(saveConfig, ["prevent"])
 						}, {
 							default: _withCtx(() => [
@@ -185,9 +179,9 @@ var Config_default = /* @__PURE__ */ __plugin_vue_export_helper_default(/* @__PU
 												class: "mr-3",
 												size: "default"
 											}, {
-												default: _withCtx(() => [..._cache[23] || (_cache[23] = [_createTextVNode("mdi-cog", -1)])]),
+												default: _withCtx(() => [..._cache[17] || (_cache[17] = [_createTextVNode("mdi-cog", -1)])]),
 												_: 1
-											}), _cache[24] || (_cache[24] = _createElementVNode("span", null, "基本设置", -1))]),
+											}), _cache[18] || (_cache[18] = _createElementVNode("span", null, "基本设置", -1))]),
 											_: 1
 										})]),
 										_: 1
@@ -265,9 +259,9 @@ var Config_default = /* @__PURE__ */ __plugin_vue_export_helper_default(/* @__PU
 												class: "mr-3",
 												size: "default"
 											}, {
-												default: _withCtx(() => [..._cache[25] || (_cache[25] = [_createTextVNode("mdi-tools", -1)])]),
+												default: _withCtx(() => [..._cache[19] || (_cache[19] = [_createTextVNode("mdi-tools", -1)])]),
 												_: 1
-											}), _cache[26] || (_cache[26] = _createElementVNode("span", null, "功能设置", -1))]),
+											}), _cache[20] || (_cache[20] = _createElementVNode("span", null, "功能设置", -1))]),
 											_: 1
 										})]),
 										_: 1
@@ -368,9 +362,9 @@ var Config_default = /* @__PURE__ */ __plugin_vue_export_helper_default(/* @__PU
 												class: "mr-3",
 												size: "default"
 											}, {
-												default: _withCtx(() => [..._cache[27] || (_cache[27] = [_createTextVNode("mdi-server-network", -1)])]),
+												default: _withCtx(() => [..._cache[21] || (_cache[21] = [_createTextVNode("mdi-server-network", -1)])]),
 												_: 1
-											}), _cache[28] || (_cache[28] = _createElementVNode("span", null, "数据服务设置", -1))]),
+											}), _cache[22] || (_cache[22] = _createElementVNode("span", null, "数据服务设置", -1))]),
 											_: 1
 										})]),
 										_: 1
@@ -410,127 +404,9 @@ var Config_default = /* @__PURE__ */ __plugin_vue_export_helper_default(/* @__PU
 												class: "mr-3",
 												size: "default"
 											}, {
-												default: _withCtx(() => [..._cache[29] || (_cache[29] = [_createTextVNode("mdi-chat-typing-outline", -1)])]),
+												default: _withCtx(() => [..._cache[23] || (_cache[23] = [_createTextVNode("mdi-bulletin-board", -1)])]),
 												_: 1
-											}), _cache[30] || (_cache[30] = _createElementVNode("span", null, "中奖喊话设置", -1))]),
-											_: 1
-										})]),
-										_: 1
-									}), _createVNode(_component_v_card_text, { class: "px-6 pb-6" }, {
-										default: _withCtx(() => [
-											_createVNode(_component_v_row, null, {
-												default: _withCtx(() => [_createVNode(_component_v_col, {
-													cols: "12",
-													sm: "3",
-													class: "d-flex align-sm-center"
-												}, {
-													default: _withCtx(() => [_createVNode(_component_v_switch, {
-														modelValue: config.announce_first,
-														"onUpdate:modelValue": _cache[10] || (_cache[10] = ($event) => config.announce_first = $event),
-														label: "一等奖喊话",
-														color: "primary",
-														"hide-details": ""
-													}, null, 8, ["modelValue"])]),
-													_: 1
-												}), _createVNode(_component_v_col, {
-													cols: "12",
-													sm: "9"
-												}, {
-													default: _withCtx(() => [_createVNode(_component_v_text_field, {
-														modelValue: config.announce_first_content,
-														"onUpdate:modelValue": _cache[11] || (_cache[11] = ($event) => config.announce_first_content = $event),
-														label: "喊话内容",
-														variant: "outlined",
-														color: "primary",
-														"hide-details": "",
-														class: "mt-2 w-100"
-													}, null, 8, ["modelValue"])]),
-													_: 1
-												})]),
-												_: 1
-											}),
-											_createVNode(_component_v_row, null, {
-												default: _withCtx(() => [_createVNode(_component_v_col, {
-													cols: "12",
-													sm: "3",
-													class: "d-flex align-sm-center"
-												}, {
-													default: _withCtx(() => [_createVNode(_component_v_switch, {
-														modelValue: config.announce_second,
-														"onUpdate:modelValue": _cache[12] || (_cache[12] = ($event) => config.announce_second = $event),
-														label: "二等奖喊话",
-														color: "primary",
-														"hide-details": ""
-													}, null, 8, ["modelValue"])]),
-													_: 1
-												}), _createVNode(_component_v_col, {
-													cols: "12",
-													sm: "9"
-												}, {
-													default: _withCtx(() => [_createVNode(_component_v_text_field, {
-														modelValue: config.announce_second_content,
-														"onUpdate:modelValue": _cache[13] || (_cache[13] = ($event) => config.announce_second_content = $event),
-														label: "喊话内容",
-														variant: "outlined",
-														color: "primary",
-														"hide-details": "",
-														class: "mt-2 w-100"
-													}, null, 8, ["modelValue"])]),
-													_: 1
-												})]),
-												_: 1
-											}),
-											_createVNode(_component_v_row, null, {
-												default: _withCtx(() => [_createVNode(_component_v_col, {
-													cols: "12",
-													sm: "3",
-													class: "d-flex align-sm-center"
-												}, {
-													default: _withCtx(() => [_createVNode(_component_v_switch, {
-														modelValue: config.announce_medal,
-														"onUpdate:modelValue": _cache[14] || (_cache[14] = ($event) => config.announce_medal = $event),
-														label: "赌鬼勋章喊话",
-														color: "primary",
-														"hide-details": ""
-													}, null, 8, ["modelValue"])]),
-													_: 1
-												}), _createVNode(_component_v_col, {
-													cols: "12",
-													sm: "9"
-												}, {
-													default: _withCtx(() => [_createVNode(_component_v_text_field, {
-														modelValue: config.announce_medal_content,
-														"onUpdate:modelValue": _cache[15] || (_cache[15] = ($event) => config.announce_medal_content = $event),
-														label: "喊话内容",
-														variant: "outlined",
-														color: "primary",
-														"hide-details": "",
-														class: "mt-2 w-100"
-													}, null, 8, ["modelValue"])]),
-													_: 1
-												})]),
-												_: 1
-											})
-										]),
-										_: 1
-									})]),
-									_: 1
-								}),
-								_createVNode(_component_v_card, {
-									variant: "flat",
-									class: "mb-6",
-									color: "surface"
-								}, {
-									default: _withCtx(() => [_createVNode(_component_v_card_item, { class: "pa-6" }, {
-										default: _withCtx(() => [_createVNode(_component_v_card_title, { class: "d-flex align-center text-h6" }, {
-											default: _withCtx(() => [_createVNode(_component_v_icon, {
-												color: "#16b1ff",
-												class: "mr-3",
-												size: "default"
-											}, {
-												default: _withCtx(() => [..._cache[31] || (_cache[31] = [_createTextVNode("mdi-bulletin-board", -1)])]),
-												_: 1
-											}), _cache[32] || (_cache[32] = _createElementVNode("span", null, "每日汇总设置", -1))]),
+											}), _cache[24] || (_cache[24] = _createElementVNode("span", null, "每日汇总设置", -1))]),
 											_: 1
 										})]),
 										_: 1
@@ -543,7 +419,7 @@ var Config_default = /* @__PURE__ */ __plugin_vue_export_helper_default(/* @__PU
 											}, {
 												default: _withCtx(() => [_createVNode(_component_v_switch, {
 													modelValue: config.daily_summary_notify,
-													"onUpdate:modelValue": _cache[16] || (_cache[16] = ($event) => config.daily_summary_notify = $event),
+													"onUpdate:modelValue": _cache[10] || (_cache[10] = ($event) => config.daily_summary_notify = $event),
 													label: "开启每日汇总",
 													color: "primary",
 													"hide-details": ""
@@ -555,7 +431,7 @@ var Config_default = /* @__PURE__ */ __plugin_vue_export_helper_default(/* @__PU
 											}, {
 												default: _withCtx(() => [_createVNode(_component_v_text_field, {
 													modelValue: config.daily_summary_time,
-													"onUpdate:modelValue": _cache[17] || (_cache[17] = ($event) => config.daily_summary_time = $event),
+													"onUpdate:modelValue": _cache[11] || (_cache[11] = ($event) => config.daily_summary_time = $event),
 													label: "最迟报告时间 (HH:MM)",
 													variant: "outlined",
 													color: "primary",
@@ -584,31 +460,31 @@ var Config_default = /* @__PURE__ */ __plugin_vue_export_helper_default(/* @__PU
 												class: "mr-3",
 												size: "default"
 											}, {
-												default: _withCtx(() => [..._cache[33] || (_cache[33] = [_createTextVNode("mdi-file-document-outline", -1)])]),
+												default: _withCtx(() => [..._cache[25] || (_cache[25] = [_createTextVNode("mdi-file-document-outline", -1)])]),
 												_: 1
-											}), _cache[34] || (_cache[34] = _createElementVNode("span", null, "报告预览", -1))]),
+											}), _cache[26] || (_cache[26] = _createElementVNode("span", null, "报告预览", -1))]),
 											_: 1
 										})]),
 										_: 1
 									}), _createVNode(_component_v_card_text, { class: "px-6 pb-6" }, {
 										default: _withCtx(() => [_createVNode(_component_v_tabs, {
 											modelValue: reportTab.value,
-											"onUpdate:modelValue": _cache[18] || (_cache[18] = ($event) => reportTab.value = $event),
+											"onUpdate:modelValue": _cache[12] || (_cache[12] = ($event) => reportTab.value = $event),
 											color: "primary",
 											density: "compact",
 											class: "mb-4"
 										}, {
 											default: _withCtx(() => [_createVNode(_component_v_tab, { value: "last" }, {
-												default: _withCtx(() => [..._cache[35] || (_cache[35] = [_createTextVNode("最后一次抽奖报告", -1)])]),
+												default: _withCtx(() => [..._cache[27] || (_cache[27] = [_createTextVNode("最后一次抽奖报告", -1)])]),
 												_: 1
 											}), _createVNode(_component_v_tab, { value: "daily" }, {
-												default: _withCtx(() => [..._cache[36] || (_cache[36] = [_createTextVNode("每日汇总报告", -1)])]),
+												default: _withCtx(() => [..._cache[28] || (_cache[28] = [_createTextVNode("每日汇总报告", -1)])]),
 												_: 1
 											})]),
 											_: 1
 										}, 8, ["modelValue"]), _createVNode(_component_v_window, {
 											modelValue: reportTab.value,
-											"onUpdate:modelValue": _cache[19] || (_cache[19] = ($event) => reportTab.value = $event)
+											"onUpdate:modelValue": _cache[13] || (_cache[13] = ($event) => reportTab.value = $event)
 										}, {
 											default: _withCtx(() => [_createVNode(_component_v_window_item, { value: "last" }, {
 												default: _withCtx(() => [_createElementVNode("div", _hoisted_2, [_createElementVNode("div", _hoisted_3, [_createElementVNode("div", _hoisted_4, _toDisplayString(config.last_report || "暂无数据,可以点击立即运行一次查看"), 1)])])]),
@@ -621,7 +497,7 @@ var Config_default = /* @__PURE__ */ __plugin_vue_export_helper_default(/* @__PU
 													loading: generatingDailyReport.value,
 													onClick: generateDailyReport
 												}, {
-													default: _withCtx(() => [..._cache[37] || (_cache[37] = [_createTextVNode(" 立即生成 ", -1)])]),
+													default: _withCtx(() => [..._cache[29] || (_cache[29] = [_createTextVNode(" 立即生成 ", -1)])]),
 													_: 1
 												}, 8, ["loading"])]), _createElementVNode("div", _hoisted_6, [_createElementVNode("div", _hoisted_7, [dailyReportPreview.value ? (_openBlock(), _createElementBlock("div", _hoisted_8, _toDisplayString(dailyReportPreview.value), 1)) : (_openBlock(), _createElementBlock("div", _hoisted_9, " 暂无每日汇总报告预览，请点击上方按钮生成。 "))])])]),
 												_: 1
@@ -643,7 +519,7 @@ var Config_default = /* @__PURE__ */ __plugin_vue_export_helper_default(/* @__PU
 								color: "secondary",
 								onClick: resetForm
 							}, {
-								default: _withCtx(() => [..._cache[38] || (_cache[38] = [_createTextVNode("重置为初始值", -1)])]),
+								default: _withCtx(() => [..._cache[30] || (_cache[30] = [_createTextVNode("重置为初始值", -1)])]),
 								_: 1
 							}),
 							_createVNode(_component_v_spacer),
@@ -652,9 +528,9 @@ var Config_default = /* @__PURE__ */ __plugin_vue_export_helper_default(/* @__PU
 								onClick: notifySwitch
 							}, {
 								default: _withCtx(() => [_createVNode(_component_v_icon, { left: "" }, {
-									default: _withCtx(() => [..._cache[39] || (_cache[39] = [_createTextVNode("mdi-chart-line", -1)])]),
+									default: _withCtx(() => [..._cache[31] || (_cache[31] = [_createTextVNode("mdi-chart-line", -1)])]),
 									_: 1
-								}), _cache[40] || (_cache[40] = _createTextVNode(" 抽奖数据统计 ", -1))]),
+								}), _cache[32] || (_cache[32] = _createTextVNode(" 抽奖数据统计 ", -1))]),
 								_: 1
 							}),
 							_createVNode(_component_v_spacer),
@@ -664,7 +540,7 @@ var Config_default = /* @__PURE__ */ __plugin_vue_export_helper_default(/* @__PU
 								onClick: saveConfig,
 								loading: saving.value
 							}, {
-								default: _withCtx(() => [..._cache[41] || (_cache[41] = [_createTextVNode("保存配置", -1)])]),
+								default: _withCtx(() => [..._cache[33] || (_cache[33] = [_createTextVNode("保存配置", -1)])]),
 								_: 1
 							}, 8, ["disabled", "loading"])
 						]),
@@ -675,5 +551,5 @@ var Config_default = /* @__PURE__ */ __plugin_vue_export_helper_default(/* @__PU
 			})]);
 		};
 	}
-}), [["__scopeId", "data-v-1b33ede8"]]);
+}), [["__scopeId", "data-v-62b177d4"]]);
 export { Config_default as default };
