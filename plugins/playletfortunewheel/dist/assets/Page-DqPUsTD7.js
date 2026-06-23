@@ -114,62 +114,53 @@ var RankGrid_default = /* @__PURE__ */ _defineComponent$2({
 	}
 });
 var { defineComponent: _defineComponent$1 } = await importShared("vue");
-var { createElementVNode: _createElementVNode$1, toDisplayString: _toDisplayString$1, resolveComponent: _resolveComponent$1, createVNode: _createVNode$1, withCtx: _withCtx$1, openBlock: _openBlock$1, createBlock: _createBlock$1, createCommentVNode: _createCommentVNode$1, renderList: _renderList$1, Fragment: _Fragment$1, createElementBlock: _createElementBlock$1 } = await importShared("vue");
-var _hoisted_1$1 = { class: "d-flex align-center justify-space-between w-100" };
-var _hoisted_2$1 = { class: "text-subtitle-2 font-weight-bold" };
-var _hoisted_3$1 = { class: "d-flex align-center" };
-var _hoisted_4$1 = { class: "text-subtitle-2 font-weight-black text-primary mr-1" };
-var _hoisted_5$1 = {
+var { renderList: _renderList$1, Fragment: _Fragment$1, openBlock: _openBlock$1, createElementBlock: _createElementBlock$1, createCommentVNode: _createCommentVNode$1, toDisplayString: _toDisplayString$1, createElementVNode: _createElementVNode$1, resolveComponent: _resolveComponent$1, createBlock: _createBlock$1, withCtx: _withCtx$1, createVNode: _createVNode$1 } = await importShared("vue");
+var _hoisted_1$1 = {
 	class: "d-flex align-center justify-center mr-3",
 	style: { "width": "32px" }
 };
-var _hoisted_6$1 = {
+var _hoisted_2$1 = {
 	key: 0,
 	class: "text-h5"
 };
-var _hoisted_7$1 = {
+var _hoisted_3$1 = {
 	key: 1,
 	class: "text-h5"
 };
-var _hoisted_8$1 = {
+var _hoisted_4$1 = {
 	key: 2,
 	class: "text-h5"
 };
-var _hoisted_9$1 = {
+var _hoisted_5$1 = {
 	key: 3,
 	class: "text-body-2 font-weight-bold text-medium-emphasis"
 };
-var _hoisted_10$1 = { class: "d-flex align-center justify-space-between w-100" };
-var _hoisted_11$1 = { class: "d-flex flex-column" };
-var _hoisted_12$1 = {
+var _hoisted_6$1 = { class: "d-flex align-center justify-space-between w-100" };
+var _hoisted_7$1 = { class: "d-flex flex-column" };
+var _hoisted_8$1 = {
 	class: "text-subtitle-2 font-weight-bold text-truncate",
 	style: { "max-width": "120px" }
 };
-var _hoisted_13$1 = { class: "text-caption text-medium-emphasis" };
-var _hoisted_14$1 = { key: 0 };
-var _hoisted_15$1 = { key: 1 };
-var _hoisted_16$1 = { class: "d-flex align-center" };
-var _hoisted_17$1 = {
+var _hoisted_9$1 = { class: "text-caption text-medium-emphasis" };
+var _hoisted_10$1 = { key: 0 };
+var _hoisted_11$1 = { key: 1 };
+var _hoisted_12$1 = { class: "d-flex align-center" };
+var _hoisted_13$1 = {
 	key: 0,
 	class: "text-subtitle-2 font-weight-black text-primary mr-1"
 };
-var _hoisted_18$1 = {
+var _hoisted_14$1 = {
 	key: 1,
 	class: "text-caption font-weight-bold text-medium-emphasis mr-1"
 };
-var _hoisted_19$1 = {
+var _hoisted_15$1 = {
 	key: 1,
 	class: "text-center pa-8 text-grey"
 };
-var { computed: computed$2 } = await importShared("vue");
 var MagicList_default = /* @__PURE__ */ _defineComponent$1({
 	__name: "MagicList",
 	props: { items: {} },
 	setup(__props) {
-		const props = __props;
-		const showReliefSummary = computed$2(() => props.items?.length > 0 && props.items.some((i) => i.relief_count !== void 0));
-		const totalReliefCount = computed$2(() => props.items.reduce((sum, item) => sum + (item.relief_count || 0), 0));
-		const totalReliefMagic = computed$2(() => props.items.reduce((sum, item) => sum + (item.magic_points || 0), 0));
 		function formatNum(num) {
 			if (num === null || num === void 0) return "";
 			const absNum = Math.abs(num);
@@ -182,20 +173,6 @@ var MagicList_default = /* @__PURE__ */ _defineComponent$1({
 			return num.toString();
 		}
 		function formatTime(timeStr) {
-			if (!timeStr) return "";
-			try {
-				const date = new Date(timeStr);
-				if (isNaN(date.getTime())) return timeStr.split(" ")[1] || timeStr;
-				return date.toLocaleTimeString("zh-CN", {
-					hour: "2-digit",
-					minute: "2-digit",
-					second: "2-digit"
-				});
-			} catch (e$1) {
-				return timeStr;
-			}
-		}
-		function formatReliefTime(timeStr) {
 			if (!timeStr) return "";
 			try {
 				const raw = timeStr;
@@ -221,33 +198,14 @@ var MagicList_default = /* @__PURE__ */ _defineComponent$1({
 			const _component_v_list_item = _resolveComponent$1("v-list-item");
 			const _component_v_list = _resolveComponent$1("v-list");
 			return _openBlock$1(), _createBlock$1(_component_v_list, { class: "bg-transparent pa-0" }, {
-				default: _withCtx$1(() => [__props.items && __props.items.length > 0 ? (_openBlock$1(), _createElementBlock$1(_Fragment$1, { key: 0 }, [showReliefSummary.value ? (_openBlock$1(), _createBlock$1(_component_v_list_item, {
-					key: 0,
-					class: "mb-2 rounded-lg bg-surface elevation-1",
-					density: "compact"
-				}, {
-					prepend: _withCtx$1(() => [..._cache[0] || (_cache[0] = [_createElementVNode$1("div", {
-						class: "d-flex align-center justify-center mr-3",
-						style: { "width": "32px" }
-					}, [_createElementVNode$1("span", { class: "text-h5" }, "📊")], -1)])]),
-					default: _withCtx$1(() => [_createElementVNode$1("div", _hoisted_1$1, [_createElementVNode$1("div", _hoisted_2$1, " 救济总次数: " + _toDisplayString$1(totalReliefCount.value), 1), _createElementVNode$1("div", _hoisted_3$1, [
-						_cache[1] || (_cache[1] = _createElementVNode$1("div", { class: "text-caption text-medium-emphasis" }, "救济总魔力", -1)),
-						_createElementVNode$1("div", _hoisted_4$1, _toDisplayString$1(formatNum(totalReliefMagic.value)), 1),
-						_createVNode$1(_component_v_icon, {
-							icon: "mdi-creation",
-							size: "x-small",
-							color: "primary"
-						})
-					])])]),
-					_: 1
-				})) : _createCommentVNode$1("", true), (_openBlock$1(true), _createElementBlock$1(_Fragment$1, null, _renderList$1(__props.items, (item, index) => {
+				default: _withCtx$1(() => [__props.items && __props.items.length > 0 ? (_openBlock$1(true), _createElementBlock$1(_Fragment$1, { key: 0 }, _renderList$1(__props.items, (item, index) => {
 					return _openBlock$1(), _createBlock$1(_component_v_list_item, {
 						key: index,
 						class: "mb-2 rounded-lg bg-surface elevation-1",
 						density: "compact"
 					}, {
-						prepend: _withCtx$1(() => [_createElementVNode$1("div", _hoisted_5$1, [index === 0 ? (_openBlock$1(), _createElementBlock$1("span", _hoisted_6$1, "🥇")) : index === 1 ? (_openBlock$1(), _createElementBlock$1("span", _hoisted_7$1, "🥈")) : index === 2 ? (_openBlock$1(), _createElementBlock$1("span", _hoisted_8$1, "🥉")) : (_openBlock$1(), _createElementBlock$1("span", _hoisted_9$1, _toDisplayString$1(index + 1), 1))])]),
-						default: _withCtx$1(() => [_createElementVNode$1("div", _hoisted_10$1, [_createElementVNode$1("div", _hoisted_11$1, [_createElementVNode$1("div", _hoisted_12$1, _toDisplayString$1(item.username), 1), _createElementVNode$1("div", _hoisted_13$1, [item.relief_count !== void 0 ? (_openBlock$1(), _createElementBlock$1("span", _hoisted_14$1, " 救济 " + _toDisplayString$1(item.relief_count) + " 次 · 最后 " + _toDisplayString$1(formatReliefTime(item.time)), 1)) : (_openBlock$1(), _createElementBlock$1("span", _hoisted_15$1, _toDisplayString$1(formatTime(item.time)), 1))])]), _createElementVNode$1("div", _hoisted_16$1, [item.magic_points !== null && item.magic_points !== void 0 ? (_openBlock$1(), _createElementBlock$1("div", _hoisted_17$1, _toDisplayString$1(formatNum(item.magic_points)), 1)) : (_openBlock$1(), _createElementBlock$1("div", _hoisted_18$1, " 还未发力 ")), item.magic_points !== null && item.magic_points !== void 0 ? (_openBlock$1(), _createBlock$1(_component_v_icon, {
+						prepend: _withCtx$1(() => [_createElementVNode$1("div", _hoisted_1$1, [index === 0 ? (_openBlock$1(), _createElementBlock$1("span", _hoisted_2$1, "🥇")) : index === 1 ? (_openBlock$1(), _createElementBlock$1("span", _hoisted_3$1, "🥈")) : index === 2 ? (_openBlock$1(), _createElementBlock$1("span", _hoisted_4$1, "🥉")) : (_openBlock$1(), _createElementBlock$1("span", _hoisted_5$1, _toDisplayString$1(index + 1), 1))])]),
+						default: _withCtx$1(() => [_createElementVNode$1("div", _hoisted_6$1, [_createElementVNode$1("div", _hoisted_7$1, [_createElementVNode$1("div", _hoisted_8$1, _toDisplayString$1(item.username), 1), _createElementVNode$1("div", _hoisted_9$1, [item.relief_count !== void 0 ? (_openBlock$1(), _createElementBlock$1("span", _hoisted_10$1, " 救济 " + _toDisplayString$1(item.relief_count) + " 次 · 最后 " + _toDisplayString$1(formatTime(item.time)), 1)) : (_openBlock$1(), _createElementBlock$1("span", _hoisted_11$1, _toDisplayString$1(formatTime(item.time)), 1))])]), _createElementVNode$1("div", _hoisted_12$1, [item.magic_points !== null && item.magic_points !== void 0 ? (_openBlock$1(), _createElementBlock$1("div", _hoisted_13$1, _toDisplayString$1(formatNum(item.magic_points)), 1)) : (_openBlock$1(), _createElementBlock$1("div", _hoisted_14$1, " 还未发力 ")), item.magic_points !== null && item.magic_points !== void 0 ? (_openBlock$1(), _createBlock$1(_component_v_icon, {
 							key: 2,
 							icon: "mdi-creation",
 							size: "x-small",
@@ -255,11 +213,11 @@ var MagicList_default = /* @__PURE__ */ _defineComponent$1({
 						})) : _createCommentVNode$1("", true)])])]),
 						_: 2
 					}, 1024);
-				}), 128))], 64)) : (_openBlock$1(), _createElementBlock$1("div", _hoisted_19$1, [_createVNode$1(_component_v_icon, {
+				}), 128)) : (_openBlock$1(), _createElementBlock$1("div", _hoisted_15$1, [_createVNode$1(_component_v_icon, {
 					icon: "mdi-format-list-bulleted-type",
 					size: "48",
 					class: "mb-2 opacity-50"
-				}), _cache[2] || (_cache[2] = _createElementVNode$1("div", { class: "text-body-2" }, "暂无上榜数据", -1))]))]),
+				}), _cache[0] || (_cache[0] = _createElementVNode$1("div", { class: "text-body-2" }, "暂无上榜数据", -1))]))]),
 				_: 1
 			});
 		};
@@ -31943,53 +31901,62 @@ var _hoisted_7 = {
 	class: "pa-8 text-center"
 };
 var _hoisted_8 = { key: 2 };
-var _hoisted_9 = { class: "pa-3" };
-var _hoisted_10 = { class: "d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between mb-3" };
-var _hoisted_11 = { class: "d-flex align-center mb-2 mb-sm-0" };
-var _hoisted_12 = { class: "d-flex flex-column flex-sm-row align-start align-sm-center mt-1 mt-sm-0" };
-var _hoisted_13 = { class: "d-flex align-center" };
-var _hoisted_14 = {
+var _hoisted_9 = { class: "text-body-2" };
+var _hoisted_10 = { class: "pa-3" };
+var _hoisted_11 = { class: "d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between mb-3" };
+var _hoisted_12 = { class: "d-flex align-center mb-2 mb-sm-0" };
+var _hoisted_13 = { class: "d-flex flex-column flex-sm-row align-start align-sm-center mt-1 mt-sm-0" };
+var _hoisted_14 = { class: "d-flex align-center" };
+var _hoisted_15 = {
 	key: 0,
 	class: "text-error ml-1"
 };
-var _hoisted_15 = { class: "d-flex align-center mt-2 mb-1 mt-sm-0" };
-var _hoisted_16 = { class: "d-flex align-center justify-center" };
-var _hoisted_17 = { class: "text-subtitle-2 font-weight-bold text-light-blue-darken-3 lh-1" };
-var _hoisted_18 = { class: "d-flex align-center justify-center" };
-var _hoisted_19 = { class: "text-subtitle-2 font-weight-bold text-deep-purple lh-1" };
-var _hoisted_20 = { class: "d-flex align-center justify-center" };
-var _hoisted_21 = { class: "text-subtitle-2 font-weight-bold text-grey-darken-3 lh-1" };
-var _hoisted_22 = { style: {
+var _hoisted_16 = { class: "d-flex align-center mt-2 mb-1 mt-sm-0" };
+var _hoisted_17 = { class: "d-flex align-center justify-center" };
+var _hoisted_18 = { class: "text-subtitle-2 font-weight-bold text-light-blue-darken-3 lh-1" };
+var _hoisted_19 = { class: "d-flex align-center justify-center" };
+var _hoisted_20 = { class: "text-subtitle-2 font-weight-bold text-deep-purple lh-1" };
+var _hoisted_21 = { class: "d-flex align-center justify-center" };
+var _hoisted_22 = { class: "text-subtitle-2 font-weight-bold text-grey-darken-3 lh-1" };
+var _hoisted_23 = { style: {
 	"height": "160px",
 	"width": "100%"
 } };
-var _hoisted_23 = { class: "pa-3 pb-0" };
-var _hoisted_24 = { class: "d-flex align-center justify-space-between" };
-var _hoisted_25 = { class: "d-flex align-center" };
-var _hoisted_26 = {
+var _hoisted_24 = { class: "pa-3 pb-0" };
+var _hoisted_25 = { class: "d-flex align-center justify-space-between" };
+var _hoisted_26 = { class: "d-flex align-center" };
+var _hoisted_27 = {
 	key: 0,
 	class: "ml-2 d-flex align-center text-caption"
 };
-var _hoisted_27 = { class: "mx-1 font-weight-bold" };
-var _hoisted_28 = { class: "mx-1 text-primary font-weight-bold" };
-var _hoisted_29 = {
+var _hoisted_28 = { class: "mx-1 font-weight-bold" };
+var _hoisted_29 = { class: "mx-1 text-primary font-weight-bold" };
+var _hoisted_30 = {
 	key: 1,
 	class: "text-success font-weight-bold"
 };
-var _hoisted_30 = { class: "d-flex align-center" };
-var _hoisted_31 = {
+var _hoisted_31 = { class: "d-flex align-center" };
+var _hoisted_32 = {
 	key: 0,
 	class: "text-caption text-medium-emphasis mr-1",
 	style: { "font-size": "10px" }
 };
-var _hoisted_32 = { key: 0 };
-var _hoisted_33 = {
+var _hoisted_33 = { key: 1 };
+var _hoisted_34 = { class: "d-flex flex-column" };
+var _hoisted_35 = { class: "d-flex align-center mb-1" };
+var _hoisted_36 = { class: "text-caption text-medium-emphasis" };
+var _hoisted_37 = { class: "text-body-2 font-weight-medium top-change-message" };
+var _hoisted_38 = {
 	key: 1,
+	class: "text-center pa-8 text-grey"
+};
+var _hoisted_39 = {
+	key: 2,
 	class: "pa-8"
 };
-var _hoisted_34 = { key: 1 };
-var _hoisted_35 = { class: "text-h6 text-primary" };
-var _hoisted_36 = { key: 2 };
+var _hoisted_40 = { key: 1 };
+var _hoisted_41 = { class: "text-h6 text-primary" };
+var _hoisted_42 = { key: 2 };
 var { onMounted, ref, computed, reactive } = await importShared("vue");
 var Page_default = /* @__PURE__ */ __plugin_vue_export_helper_default(/* @__PURE__ */ _defineComponent({
 	__name: "Page",
@@ -32021,6 +31988,7 @@ var Page_default = /* @__PURE__ */ __plugin_vue_export_helper_default(/* @__PURE
 		const historyData = ref([]);
 		const reliefList = ref([]);
 		const dailyMagicList = ref([]);
+		const monthTopChangeLogs = ref([]);
 		const claimingRelief = ref(false);
 		const dailyStatus = ref({
 			total_auth_users: 0,
@@ -32032,6 +32000,7 @@ var Page_default = /* @__PURE__ */ __plugin_vue_export_helper_default(/* @__PURE
 			available: 0,
 			available_w: 0
 		});
+		const noticeContent = ref("");
 		const lastUpdated = ref("");
 		const username = ref(localStorage.getItem("PlayletFortuneWheel-username") || "");
 		const activeTab = ref("today");
@@ -32161,6 +32130,17 @@ var Page_default = /* @__PURE__ */ __plugin_vue_export_helper_default(/* @__PURE
 			}
 			return n.toString();
 		}
+		function formatLogTime(timeStr) {
+			if (!timeStr) return "";
+			const parts = timeStr.split(" ");
+			if (parts.length >= 2) {
+				const datePart = parts[0] || "";
+				const timePart = parts[1] || "";
+				const dateSegs = datePart.split("-");
+				if (dateSegs.length >= 3) return `${dateSegs[1]}-${dateSegs[2]} ${timePart}`;
+			}
+			return timeStr;
+		}
 		function getRankCards(rankData) {
 			if (!rankData) return [];
 			const cards = [];
@@ -32242,6 +32222,15 @@ var Page_default = /* @__PURE__ */ __plugin_vue_export_helper_default(/* @__PURE
 				console.error("获取救济榜单失败:", err);
 			}
 		}
+		async function refreshMonthTopChangeLogs() {
+			try {
+				const res = await props.api.get(`plugin/PlayletFortuneWheel/get-month-top-change-logs`);
+				monthTopChangeLogs.value = Array.isArray(res) ? res : [];
+				localStorage.setItem("PlayletFortuneWheel-monthTopChangeLogs", JSON.stringify(monthTopChangeLogs.value));
+			} catch (err) {
+				console.error("获取榜首动态失败:", err);
+			}
+		}
 		async function refreshSystemStatus() {
 			try {
 				const res = await props.api.get("plugin/PlayletFortuneWheel/relief-system-status");
@@ -32266,6 +32255,10 @@ var Page_default = /* @__PURE__ */ __plugin_vue_export_helper_default(/* @__PURE
 					if (storeReliefList && reliefList.value.length === 0) try {
 						reliefList.value = JSON.parse(storeReliefList);
 					} catch (e$1) {}
+					const storeMonthTopChangeLogs = localStorage.getItem("PlayletFortuneWheel-monthTopChangeLogs");
+					if (storeMonthTopChangeLogs && monthTopChangeLogs.value.length === 0) try {
+						monthTopChangeLogs.value = JSON.parse(storeMonthTopChangeLogs);
+					} catch (e$1) {}
 					const storeSystemStatus = localStorage.getItem("PlayletFortuneWheel-systemStatus");
 					if (storeSystemStatus && systemStatus.value.available === 0) try {
 						systemStatus.value = JSON.parse(storeSystemStatus);
@@ -32285,7 +32278,8 @@ var Page_default = /* @__PURE__ */ __plugin_vue_export_helper_default(/* @__PURE
 				await Promise.all([
 					refreshDailyMagicList(),
 					refreshReliefList(),
-					refreshSystemStatus()
+					refreshSystemStatus(),
+					refreshMonthTopChangeLogs()
 				]);
 				await getDailyStatus();
 			} catch (err) {
@@ -32303,12 +32297,29 @@ var Page_default = /* @__PURE__ */ __plugin_vue_export_helper_default(/* @__PURE
 				console.error("获取每日状态失败:", err);
 			}
 		}
+		async function refreshNotice() {
+			try {
+				const res = await props.api.get(`plugin/PlayletFortuneWheel/get-notice`);
+				const content = typeof res?.content === "string" ? res.content.trim() : "";
+				noticeContent.value = content;
+				if (content) localStorage.setItem("PlayletFortuneWheel-noticeContent", content);
+				else localStorage.removeItem("PlayletFortuneWheel-noticeContent");
+			} catch (err) {
+				console.error("获取实时通知失败:", err);
+				noticeContent.value = "";
+				localStorage.removeItem("PlayletFortuneWheel-noticeContent");
+			}
+		}
 		async function refreshData(force = false) {
 			loading.value = true;
 			error$1.value = null;
 			try {
 				if (!username.value) await getUsername();
-				await Promise.all([refreshPersonalData(), refreshStatisticsData(force)]);
+				await Promise.all([
+					refreshPersonalData(),
+					refreshStatisticsData(force),
+					refreshNotice()
+				]);
 			} catch (err) {
 				console.error("刷新数据失败:", err);
 				error$1.value = err.message || "刷新数据失败";
@@ -32422,7 +32433,10 @@ var Page_default = /* @__PURE__ */ __plugin_vue_export_helper_default(/* @__PURE
 			const storeDailyMagicList = localStorage.getItem("PlayletFortuneWheel-dailyMagicList");
 			const storeReliefList = localStorage.getItem("PlayletFortuneWheel-reliefList");
 			const storeLastUpdated = localStorage.getItem("PlayletFortuneWheel-lastUpdated");
+			const storeNoticeContent = localStorage.getItem("PlayletFortuneWheel-noticeContent");
+			const storeMonthTopChangeLogs = localStorage.getItem("PlayletFortuneWheel-monthTopChangeLogs");
 			if (storeLastUpdated) lastUpdated.value = storeLastUpdated;
+			if (storeNoticeContent) noticeContent.value = storeNoticeContent;
 			if (storeStatisticsData) try {
 				data.value = JSON.parse(storeStatisticsData);
 			} catch (err) {
@@ -32442,6 +32456,11 @@ var Page_default = /* @__PURE__ */ __plugin_vue_export_helper_default(/* @__PURE
 				reliefList.value = JSON.parse(storeReliefList);
 			} catch (err) {
 				console.error("解析本地存储救济榜数据失败:", err);
+			}
+			if (storeMonthTopChangeLogs) try {
+				monthTopChangeLogs.value = JSON.parse(storeMonthTopChangeLogs);
+			} catch (err) {
+				console.error("解析本地存储榜首动态失败:", err);
 			}
 			const storeSystemStatus = localStorage.getItem("PlayletFortuneWheel-systemStatus");
 			if (storeSystemStatus) try {
@@ -32473,6 +32492,8 @@ var Page_default = /* @__PURE__ */ __plugin_vue_export_helper_default(/* @__PURE
 			const _component_v_tab = _resolveComponent("v-tab");
 			const _component_v_tabs = _resolveComponent("v-tabs");
 			const _component_v_window_item = _resolveComponent("v-window-item");
+			const _component_v_list_item = _resolveComponent("v-list-item");
+			const _component_v_list = _resolveComponent("v-list");
 			const _component_v_window = _resolveComponent("v-window");
 			const _component_v_sheet = _resolveComponent("v-sheet");
 			const _component_v_card_text = _resolveComponent("v-card-text");
@@ -32545,13 +32566,24 @@ var Page_default = /* @__PURE__ */ __plugin_vue_export_helper_default(/* @__PURE
 							default: _withCtx(() => [_createTextVNode(_toDisplayString(error$1.value) + " ", 1)]),
 							_: 1
 						})) : (_openBlock(), _createElementBlock("div", _hoisted_8, [
-							_createElementVNode("div", _hoisted_9, [
-								_createElementVNode("div", _hoisted_10, [_createElementVNode("div", _hoisted_11, [_createVNode(_component_v_icon, {
+							noticeContent.value ? (_openBlock(), _createBlock(_component_v_alert, {
+								key: 0,
+								type: "info",
+								variant: "tonal",
+								density: "compact",
+								class: "ma-3 mb-0 notice-alert",
+								icon: "mdi-bullhorn-outline"
+							}, {
+								default: _withCtx(() => [_createElementVNode("div", _hoisted_9, _toDisplayString(noticeContent.value), 1)]),
+								_: 1
+							})) : _createCommentVNode("", true),
+							_createElementVNode("div", _hoisted_10, [
+								_createElementVNode("div", _hoisted_11, [_createElementVNode("div", _hoisted_12, [_createVNode(_component_v_icon, {
 									icon: "mdi-account-circle-outline",
 									color: "primary",
 									size: "small",
 									class: "mr-1"
-								}), _cache[15] || (_cache[15] = _createElementVNode("h3", { class: "text-subtitle-1 font-weight-bold" }, "个人运势 (30天)", -1))]), _createElementVNode("div", _hoisted_12, [_createElementVNode("div", _hoisted_13, [systemStatus.value.success ? (_openBlock(), _createBlock(_component_v_chip, {
+								}), _cache[15] || (_cache[15] = _createElementVNode("h3", { class: "text-subtitle-1 font-weight-bold" }, "个人运势 (30天)", -1))]), _createElementVNode("div", _hoisted_13, [_createElementVNode("div", _hoisted_14, [systemStatus.value.success ? (_openBlock(), _createBlock(_component_v_chip, {
 									key: 0,
 									size: "x-small",
 									color: systemStatus.value.available > 0 ? "green-lighten-5" : "red-lighten-5",
@@ -32565,7 +32597,7 @@ var Page_default = /* @__PURE__ */ __plugin_vue_export_helper_default(/* @__PURE
 											size: "x-small"
 										}, null, 8, ["icon"]),
 										_createElementVNode("span", null, " 救济金池: " + _toDisplayString(systemStatus.value.available_w) + "W ", 1),
-										systemStatus.value.available <= 1e7 ? (_openBlock(), _createElementBlock("span", _hoisted_14, " 救济金池已见底,求射:arvinchen ")) : _createCommentVNode("", true)
+										systemStatus.value.available <= 1e7 ? (_openBlock(), _createElementBlock("span", _hoisted_15, " 救济金池已见底,求射:arvinchen ")) : _createCommentVNode("", true)
 									]),
 									_: 1
 								}, 8, ["color"])) : _createCommentVNode("", true), _createVNode(_component_v_btn, {
@@ -32575,7 +32607,7 @@ var Page_default = /* @__PURE__ */ __plugin_vue_export_helper_default(/* @__PURE
 									class: "mr-2",
 									color: "grey",
 									onClick: _cache[2] || (_cache[2] = ($event) => showReliefRuleDialog.value = true)
-								})]), _createElementVNode("div", _hoisted_15, [
+								})]), _createElementVNode("div", _hoisted_16, [
 									_createVNode(_component_v_btn, {
 										color: "success",
 										variant: "elevated",
@@ -32626,7 +32658,7 @@ var Page_default = /* @__PURE__ */ __plugin_vue_export_helper_default(/* @__PURE
 												color: "light-blue-lighten-5",
 												class: "pa-2"
 											}, {
-												default: _withCtx(() => [_createElementVNode("div", _hoisted_16, [_cache[20] || (_cache[20] = _createElementVNode("div", { class: "text-h5 mr-1" }, "💰", -1)), _createElementVNode("div", null, [_cache[19] || (_cache[19] = _createElementVNode("div", {
+												default: _withCtx(() => [_createElementVNode("div", _hoisted_17, [_cache[20] || (_cache[20] = _createElementVNode("div", { class: "text-h5 mr-1" }, "💰", -1)), _createElementVNode("div", null, [_cache[19] || (_cache[19] = _createElementVNode("div", {
 													class: "text-caption text-medium-emphasis",
 													style: {
 														"font-size": "12px !important",
@@ -32634,7 +32666,7 @@ var Page_default = /* @__PURE__ */ __plugin_vue_export_helper_default(/* @__PURE
 														"transform": "scale(0.9)",
 														"transform-origin": "left center"
 													}
-												}, "本月魔力", -1)), _createElementVNode("div", _hoisted_17, _toDisplayString(formatNum(personalStats.value.totalMagic)), 1)])])]),
+												}, "本月魔力", -1)), _createElementVNode("div", _hoisted_18, _toDisplayString(formatNum(personalStats.value.totalMagic)), 1)])])]),
 												_: 1
 											})]),
 											_: 1
@@ -32649,7 +32681,7 @@ var Page_default = /* @__PURE__ */ __plugin_vue_export_helper_default(/* @__PURE
 												color: "deep-purple-lighten-5",
 												class: "pa-2"
 											}, {
-												default: _withCtx(() => [_createElementVNode("div", _hoisted_18, [_cache[23] || (_cache[23] = _createElementVNode("div", { class: "text-h5 mr-1" }, "🌟", -1)), _createElementVNode("div", null, [_cache[22] || (_cache[22] = _createElementVNode("div", {
+												default: _withCtx(() => [_createElementVNode("div", _hoisted_19, [_cache[23] || (_cache[23] = _createElementVNode("div", { class: "text-h5 mr-1" }, "🌟", -1)), _createElementVNode("div", null, [_cache[22] || (_cache[22] = _createElementVNode("div", {
 													class: "text-caption text-medium-emphasis",
 													style: {
 														"font-size": "12px !important",
@@ -32657,7 +32689,7 @@ var Page_default = /* @__PURE__ */ __plugin_vue_export_helper_default(/* @__PURE
 														"transform": "scale(0.9)",
 														"transform-origin": "left center"
 													}
-												}, "本月一等", -1)), _createElementVNode("div", _hoisted_19, [_createTextVNode(_toDisplayString(personalStats.value.firstPrize) + " ", 1), _cache[21] || (_cache[21] = _createElementVNode("span", {
+												}, "本月一等", -1)), _createElementVNode("div", _hoisted_20, [_createTextVNode(_toDisplayString(personalStats.value.firstPrize) + " ", 1), _cache[21] || (_cache[21] = _createElementVNode("span", {
 													class: "text-caption",
 													style: { "font-size": "10px" }
 												}, "次", -1))])])])]),
@@ -32675,7 +32707,7 @@ var Page_default = /* @__PURE__ */ __plugin_vue_export_helper_default(/* @__PURE
 												color: "grey-lighten-4",
 												class: "pa-2"
 											}, {
-												default: _withCtx(() => [_createElementVNode("div", _hoisted_20, [_cache[26] || (_cache[26] = _createElementVNode("div", { class: "text-h5 mr-1" }, "👻", -1)), _createElementVNode("div", null, [_cache[25] || (_cache[25] = _createElementVNode("div", {
+												default: _withCtx(() => [_createElementVNode("div", _hoisted_21, [_cache[26] || (_cache[26] = _createElementVNode("div", { class: "text-h5 mr-1" }, "👻", -1)), _createElementVNode("div", null, [_cache[25] || (_cache[25] = _createElementVNode("div", {
 													class: "text-caption text-medium-emphasis",
 													style: {
 														"font-size": "12px !important",
@@ -32683,7 +32715,7 @@ var Page_default = /* @__PURE__ */ __plugin_vue_export_helper_default(/* @__PURE
 														"transform": "scale(0.9)",
 														"transform-origin": "left center"
 													}
-												}, "本月赌鬼", -1)), _createElementVNode("div", _hoisted_21, [_createTextVNode(_toDisplayString(personalStats.value.gamblerBadge) + " ", 1), _cache[24] || (_cache[24] = _createElementVNode("span", {
+												}, "本月赌鬼", -1)), _createElementVNode("div", _hoisted_22, [_createTextVNode(_toDisplayString(personalStats.value.gamblerBadge) + " ", 1), _cache[24] || (_cache[24] = _createElementVNode("span", {
 													class: "text-caption",
 													style: { "font-size": "10px" }
 												}, "次", -1))])])])]),
@@ -32698,7 +32730,7 @@ var Page_default = /* @__PURE__ */ __plugin_vue_export_helper_default(/* @__PURE
 									variant: "outlined",
 									class: "pa-2 mt-2"
 								}, {
-									default: _withCtx(() => [_cache[27] || (_cache[27] = _createElementVNode("div", { class: "text-caption mb-1 font-weight-bold text-medium-emphasis" }, "魔力值走势", -1)), _createElementVNode("div", _hoisted_22, [_createVNode(_unref(src_default), {
+									default: _withCtx(() => [_cache[27] || (_cache[27] = _createElementVNode("div", { class: "text-caption mb-1 font-weight-bold text-medium-emphasis" }, "魔力值走势", -1)), _createElementVNode("div", _hoisted_23, [_createVNode(_unref(src_default), {
 										class: "chart",
 										option: chartOption.value,
 										autoresize: ""
@@ -32707,7 +32739,7 @@ var Page_default = /* @__PURE__ */ __plugin_vue_export_helper_default(/* @__PURE
 								})
 							]),
 							_createVNode(_component_v_divider, { class: "my-1" }),
-							_createElementVNode("div", _hoisted_23, [_createElementVNode("div", _hoisted_24, [_createElementVNode("div", _hoisted_25, [
+							_createElementVNode("div", _hoisted_24, [_createElementVNode("div", _hoisted_25, [_createElementVNode("div", _hoisted_26, [
 								_createVNode(_component_v_icon, {
 									icon: "mdi-chart-timeline-variant",
 									color: "secondary",
@@ -32715,18 +32747,18 @@ var Page_default = /* @__PURE__ */ __plugin_vue_export_helper_default(/* @__PURE
 									class: "mr-1"
 								}),
 								_cache[31] || (_cache[31] = _createElementVNode("h3", { class: "text-subtitle-1 font-weight-bold" }, "伙伴风云榜", -1)),
-								dailyStatus.value.total_auth_users > 0 ? (_openBlock(), _createElementBlock("div", _hoisted_26, [dailyStatus.value.total_auth_users - dailyStatus.value.today_drawn_users > 0 ? (_openBlock(), _createElementBlock(_Fragment, { key: 0 }, [
+								dailyStatus.value.total_auth_users > 0 ? (_openBlock(), _createElementBlock("div", _hoisted_27, [dailyStatus.value.total_auth_users - dailyStatus.value.today_drawn_users > 0 ? (_openBlock(), _createElementBlock(_Fragment, { key: 0 }, [
 									_cache[28] || (_cache[28] = _createElementVNode("span", { class: "text-medium-emphasis" }, "待抽", -1)),
-									_createElementVNode("span", _hoisted_27, _toDisplayString(dailyStatus.value.total_auth_users - dailyStatus.value.today_drawn_users), 1),
+									_createElementVNode("span", _hoisted_28, _toDisplayString(dailyStatus.value.total_auth_users - dailyStatus.value.today_drawn_users), 1),
 									_cache[29] || (_cache[29] = _createElementVNode("span", { class: "text-medium-emphasis" }, "/", -1)),
-									_createElementVNode("span", _hoisted_28, _toDisplayString(dailyStatus.value.total_auth_users), 1),
+									_createElementVNode("span", _hoisted_29, _toDisplayString(dailyStatus.value.total_auth_users), 1),
 									_cache[30] || (_cache[30] = _createElementVNode("span", {
 										class: "text-primary",
 										style: { "font-size": "10px" }
 									}, "(已认证)", -1))
-								], 64)) : (_openBlock(), _createElementBlock("span", _hoisted_29, "已完赛"))])) : _createCommentVNode("", true)
-							]), _createElementVNode("div", _hoisted_30, [
-								lastUpdated.value ? (_openBlock(), _createElementBlock("div", _hoisted_31, _toDisplayString(lastUpdated.value.split(" ")[1]) + " 更新 ", 1)) : _createCommentVNode("", true),
+								], 64)) : (_openBlock(), _createElementBlock("span", _hoisted_30, "已完赛"))])) : _createCommentVNode("", true)
+							]), _createElementVNode("div", _hoisted_31, [
+								lastUpdated.value ? (_openBlock(), _createElementBlock("div", _hoisted_32, _toDisplayString(lastUpdated.value.split(" ")[1]) + " 更新 ", 1)) : _createCommentVNode("", true),
 								_createVNode(_component_v_btn, {
 									icon: "mdi-refresh",
 									variant: "text",
@@ -32745,7 +32777,7 @@ var Page_default = /* @__PURE__ */ __plugin_vue_export_helper_default(/* @__PURE
 									title: "生成每日汇总报告"
 								}, null, 8, ["loading"])
 							])])]),
-							data.value.is_authenticated ? (_openBlock(), _createElementBlock("div", _hoisted_32, [_createVNode(_component_v_tabs, {
+							data.value.is_authenticated ? (_openBlock(), _createElementBlock("div", _hoisted_33, [_createVNode(_component_v_tabs, {
 								modelValue: activeTab.value,
 								"onUpdate:modelValue": _cache[4] || (_cache[4] = ($event) => activeTab.value = $event),
 								color: "primary",
@@ -32838,6 +32870,27 @@ var Page_default = /* @__PURE__ */ __plugin_vue_export_helper_default(/* @__PURE
 											_: 1
 										}), _cache[39] || (_cache[39] = _createTextVNode(" 救济金领取榜 ", -1))]),
 										_: 1
+									}),
+									_createVNode(_component_v_tab, {
+										value: "top_changes",
+										class: "text-caption",
+										style: { "height": "36px" }
+									}, {
+										default: _withCtx(() => [_createVNode(_component_v_avatar, {
+											color: "orange-lighten-5",
+											size: "24",
+											class: "mr-2"
+										}, {
+											default: _withCtx(() => [_createVNode(_component_v_icon, {
+												size: "14",
+												color: "orange-darken-3"
+											}, {
+												default: _withCtx(() => [..._cache[40] || (_cache[40] = [_createTextVNode("mdi-trophy-variant", -1)])]),
+												_: 1
+											})]),
+											_: 1
+										}), _cache[41] || (_cache[41] = _createTextVNode(" 榜首争夺战报 ", -1))]),
+										_: 1
 									})
 								]),
 								_: 1
@@ -32877,10 +32930,57 @@ var Page_default = /* @__PURE__ */ __plugin_vue_export_helper_default(/* @__PURE
 									}, {
 										default: _withCtx(() => [_createVNode(MagicList_default, { items: reliefList.value }, null, 8, ["items"])]),
 										_: 1
+									}),
+									_createVNode(_component_v_window_item, {
+										value: "top_changes",
+										class: "pa-3 bg-grey-lighten-4",
+										style: { "min-height": "300px" }
+									}, {
+										default: _withCtx(() => [monthTopChangeLogs.value.length ? (_openBlock(), _createBlock(_component_v_list, {
+											key: 0,
+											class: "bg-transparent pa-0"
+										}, {
+											default: _withCtx(() => [(_openBlock(true), _createElementBlock(_Fragment, null, _renderList(monthTopChangeLogs.value, (log$1, index) => {
+												return _openBlock(), _createBlock(_component_v_list_item, {
+													key: `${log$1.time}-${log$1.type}-${index}`,
+													class: "mb-2 rounded-lg bg-surface elevation-1",
+													density: "compact"
+												}, {
+													prepend: _withCtx(() => [_createVNode(_component_v_avatar, {
+														color: "orange-lighten-5",
+														size: "34",
+														class: "mr-3"
+													}, {
+														default: _withCtx(() => [_createVNode(_component_v_icon, {
+															icon: "mdi-trophy-variant",
+															color: "orange-darken-3",
+															size: "18"
+														})]),
+														_: 1
+													})]),
+													default: _withCtx(() => [_createElementVNode("div", _hoisted_34, [_createElementVNode("div", _hoisted_35, [_createVNode(_component_v_chip, {
+														size: "x-small",
+														color: "orange",
+														variant: "tonal",
+														class: "mr-2"
+													}, {
+														default: _withCtx(() => [_createTextVNode(_toDisplayString(log$1.title || "本月榜首"), 1)]),
+														_: 2
+													}, 1024), _createElementVNode("span", _hoisted_36, _toDisplayString(formatLogTime(log$1.time)), 1)]), _createElementVNode("div", _hoisted_37, _toDisplayString(log$1.message), 1)])]),
+													_: 2
+												}, 1024);
+											}), 128))]),
+											_: 1
+										})) : (_openBlock(), _createElementBlock("div", _hoisted_38, [_createVNode(_component_v_icon, {
+											icon: "mdi-trophy-outline",
+											size: "48",
+											class: "mb-2 opacity-50"
+										}), _cache[42] || (_cache[42] = _createElementVNode("div", { class: "text-body-2" }, "暂无榜首变更记录", -1))]))]),
+										_: 1
 									})
 								]),
 								_: 1
-							}, 8, ["modelValue"])])) : (_openBlock(), _createElementBlock("div", _hoisted_33, [_createVNode(_component_v_row, { justify: "center" }, {
+							}, 8, ["modelValue"])])) : (_openBlock(), _createElementBlock("div", _hoisted_39, [_createVNode(_component_v_row, { justify: "center" }, {
 								default: _withCtx(() => [_createVNode(_component_v_col, {
 									cols: "12",
 									md: "8"
@@ -32896,8 +32996,8 @@ var Page_default = /* @__PURE__ */ __plugin_vue_export_helper_default(/* @__PURE
 												color: "warning",
 												class: "mb-4"
 											}),
-											_cache[44] || (_cache[44] = _createElementVNode("div", { class: "text-h5 mb-2" }, "身份认证", -1)),
-											_cache[45] || (_cache[45] = _createElementVNode("div", { class: "text-body-1 text-medium-emphasis mb-6" }, " 共享抽奖统计数据，需要验证您的身份。 ", -1)),
+											_cache[47] || (_cache[47] = _createElementVNode("div", { class: "text-h5 mb-2" }, "身份认证", -1)),
+											_cache[48] || (_cache[48] = _createElementVNode("div", { class: "text-body-1 text-medium-emphasis mb-6" }, " 共享抽奖统计数据，需要验证您的身份。 ", -1)),
 											data.value.auth_message && !data.value.token ? (_openBlock(), _createBlock(_component_v_alert, {
 												key: 0,
 												type: "warning",
@@ -32907,17 +33007,17 @@ var Page_default = /* @__PURE__ */ __plugin_vue_export_helper_default(/* @__PURE
 												default: _withCtx(() => [_createTextVNode(_toDisplayString(data.value.auth_message) + "，如果您已发送私信请稍后重试，5分钟内可以通过认证，也可以群里联系直接通过；如果未发送私信可以在设置页面清空token后重启认证流程。 ", 1)]),
 												_: 1
 											})) : _createCommentVNode("", true),
-											data.value.token ? (_openBlock(), _createElementBlock("div", _hoisted_34, [
-												_cache[41] || (_cache[41] = _createElementVNode("div", { class: "text-subtitle-2 font-weight-bold text-left mb-2" }, "您的临时 Token:", -1)),
+											data.value.token ? (_openBlock(), _createElementBlock("div", _hoisted_40, [
+												_cache[44] || (_cache[44] = _createElementVNode("div", { class: "text-subtitle-2 font-weight-bold text-left mb-2" }, "您的临时 Token:", -1)),
 												_createVNode(_component_v_sheet, {
 													rounded: "",
 													color: "grey-lighten-3",
 													class: "pa-4 mb-4 d-flex align-center justify-space-between"
 												}, {
-													default: _withCtx(() => [_createElementVNode("code", _hoisted_35, _toDisplayString(data.value.token), 1)]),
+													default: _withCtx(() => [_createElementVNode("code", _hoisted_41, _toDisplayString(data.value.token), 1)]),
 													_: 1
 												}),
-												_cache[42] || (_cache[42] = _createElementVNode("div", { class: "text-body-2 text-medium-emphasis mb-4" }, " 请点击下方按钮，发送主题为“抽奖认证”，内容为上述Token，系统将在5分钟内完成认证。 ", -1)),
+												_cache[45] || (_cache[45] = _createElementVNode("div", { class: "text-body-2 text-medium-emphasis mb-4" }, " 请点击下方按钮，发送主题为“抽奖认证”，内容为上述Token，系统将在5分钟内完成认证。 ", -1)),
 												_createVNode(_component_v_btn, {
 													href: "https://playlet.cc/sendmessage.php?receiver=11117",
 													target: "_blank",
@@ -32925,14 +33025,14 @@ var Page_default = /* @__PURE__ */ __plugin_vue_export_helper_default(/* @__PURE
 													size: "large",
 													"prepend-icon": "mdi-send"
 												}, {
-													default: _withCtx(() => [..._cache[40] || (_cache[40] = [_createTextVNode(" 去发送私信 ", -1)])]),
+													default: _withCtx(() => [..._cache[43] || (_cache[43] = [_createTextVNode(" 去发送私信 ", -1)])]),
 													_: 1
 												})
-											])) : (_openBlock(), _createElementBlock("div", _hoisted_36, [_createVNode(_component_v_btn, {
+											])) : (_openBlock(), _createElementBlock("div", _hoisted_42, [_createVNode(_component_v_btn, {
 												color: "primary",
 												onClick: _cache[6] || (_cache[6] = ($event) => refreshData(true))
 											}, {
-												default: _withCtx(() => [..._cache[43] || (_cache[43] = [_createTextVNode("重试一下", -1)])]),
+												default: _withCtx(() => [..._cache[46] || (_cache[46] = [_createTextVNode("重试一下", -1)])]),
 												_: 1
 											})]))
 										]),
@@ -32953,7 +33053,7 @@ var Page_default = /* @__PURE__ */ __plugin_vue_export_helper_default(/* @__PURE
 						default: _withCtx(() => [_createVNode(_component_v_card, null, {
 							default: _withCtx(() => [
 								_createVNode(_component_v_card_title, { class: "text-h5 bg-primary text-white" }, {
-									default: _withCtx(() => [..._cache[46] || (_cache[46] = [_createTextVNode(" 抽奖结果 ", -1)])]),
+									default: _withCtx(() => [..._cache[49] || (_cache[49] = [_createTextVNode(" 抽奖结果 ", -1)])]),
 									_: 1
 								}),
 								_createVNode(_component_v_card_text, {
@@ -32977,7 +33077,7 @@ var Page_default = /* @__PURE__ */ __plugin_vue_export_helper_default(/* @__PURE
 										variant: "text",
 										onClick: _cache[7] || (_cache[7] = ($event) => showRaffleResult.value = false)
 									}, {
-										default: _withCtx(() => [..._cache[47] || (_cache[47] = [_createTextVNode("关闭", -1)])]),
+										default: _withCtx(() => [..._cache[50] || (_cache[50] = [_createTextVNode("关闭", -1)])]),
 										_: 1
 									})]),
 									_: 1
@@ -32995,11 +33095,11 @@ var Page_default = /* @__PURE__ */ __plugin_vue_export_helper_default(/* @__PURE
 						default: _withCtx(() => [_createVNode(_component_v_card, null, {
 							default: _withCtx(() => [
 								_createVNode(_component_v_card_title, { class: "text-subtitle-1 font-weight-bold" }, {
-									default: _withCtx(() => [..._cache[48] || (_cache[48] = [_createTextVNode(" 救济金领取规则 ", -1)])]),
+									default: _withCtx(() => [..._cache[51] || (_cache[51] = [_createTextVNode(" 救济金领取规则 ", -1)])]),
 									_: 1
 								}),
 								_createVNode(_component_v_card_text, { class: "text-body-2" }, {
-									default: _withCtx(() => [..._cache[49] || (_cache[49] = [
+									default: _withCtx(() => [..._cache[52] || (_cache[52] = [
 										_createElementVNode("div", null, "魔力值领取资格（对应保种体积）:", -1),
 										_createElementVNode("div", { class: "mt-2" }, "5T 以下无法领取救济金", -1),
 										_createElementVNode("div", null, "5T → 50W", -1),
@@ -33016,7 +33116,7 @@ var Page_default = /* @__PURE__ */ __plugin_vue_export_helper_default(/* @__PURE
 										variant: "text",
 										onClick: _cache[9] || (_cache[9] = ($event) => showReliefRuleDialog.value = false)
 									}, {
-										default: _withCtx(() => [..._cache[50] || (_cache[50] = [_createTextVNode(" 知道了 ", -1)])]),
+										default: _withCtx(() => [..._cache[53] || (_cache[53] = [_createTextVNode(" 知道了 ", -1)])]),
 										_: 1
 									})]),
 									_: 1
@@ -33041,5 +33141,5 @@ var Page_default = /* @__PURE__ */ __plugin_vue_export_helper_default(/* @__PURE
 			})]);
 		};
 	}
-}), [["__scopeId", "data-v-eb32c76f"]]);
+}), [["__scopeId", "data-v-7d66fea0"]]);
 export { __export as n, Page_default as t };

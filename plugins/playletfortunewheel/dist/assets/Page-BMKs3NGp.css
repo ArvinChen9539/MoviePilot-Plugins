@@ -1,0 +1,31 @@
+
+.plugin-page[data-v-7d66fea0] {
+  background-color: #f5f5f5;
+}
+.animate-pulse[data-v-7d66fea0] {
+  animation: pulse-7d66fea0 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+@keyframes pulse-7d66fea0 {
+0%, 100% {
+    opacity: 1;
+}
+50% {
+    opacity: 0.5;
+}
+}
+.dense-row[data-v-7d66fea0] {
+}
+.bg-grey-lighten-4[data-v-7d66fea0] {
+  background-color: #f5f5f5 !important;
+}
+.chart[data-v-7d66fea0] {
+  height: 160px;
+  width: 100%;
+}
+.lh-1[data-v-7d66fea0] {
+  line-height: 1 !important;
+}
+.top-change-message[data-v-7d66fea0] {
+  white-space: pre-line;
+  line-height: 1.5;
+}
