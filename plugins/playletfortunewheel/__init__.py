@@ -25,7 +25,7 @@ class PlayletFortuneWheel(_PluginBase):
     # 插件图标
     plugin_icon = "https://raw.githubusercontent.com/ArvinChen9539/MoviePilot-Plugins/feature-playlet-fortune-wheel/icons/PlayletFortuneWheel.png"
     # 插件版本
-    plugin_version = "2.1.4"
+    plugin_version = "2.2.1"
     # 插件作者
     plugin_author = "ArvinChen9539"
     # 作者主页
@@ -46,23 +46,6 @@ class PlayletFortuneWheel(_PluginBase):
 
     # 只抽免费
     _only_free: bool = False
-
-    # 中一等奖是否喊话
-    _announce_first: bool = True
-    _default_announce_first_content: str = "🎉🎉🎉🥇😊"
-    # 一等奖喊话内容
-    _announce_first_content: str = _default_announce_first_content
-
-    # 中二等奖是否喊话
-    _announce_second: bool = True
-    _default_announce_second_content: str = "🎉🎉🎉🥈🙂"
-    # 二等奖喊话内容
-    _announce_second_content: str = _default_announce_second_content
-
-    # 赌鬼勋章喊话
-    _announce_medal: bool = True
-    _default_announce_medal_content: str = "🎉🎉🎉👹😱我是大赌鬼"
-    _announce_medal_content: str = _default_announce_medal_content
 
     # 保存最后一次抽奖报告
     _last_report: Optional[str] = None
@@ -123,12 +106,6 @@ class PlayletFortuneWheel(_PluginBase):
             self._use_proxy = config.get("use_proxy", False)
             self._only_free = config.get("only_free", False)
             self._auto_cookie = config.get("auto_cookie", True)
-            self._announce_first = config.get("announce_first", True)
-            self._announce_first_content = config.get("announce_first_content", self._default_announce_first_content)
-            self._announce_second = config.get("announce_second", True)
-            self._announce_second_content = config.get("announce_second_content", self._default_announce_second_content)
-            self._announce_medal = config.get("announce_medal", True)
-            self._announce_medal_content = config.get("announce_medal_content", self._default_announce_medal_content)
             self._last_report = config.get("last_report")
             self._auth_token = config.get("auth_token")
             self._daily_summary_notify = config.get("daily_summary_notify", True)
@@ -137,13 +114,10 @@ class PlayletFortuneWheel(_PluginBase):
             # 处理自动获取cookie
             if self._auto_cookie:
                 self._cookie = self.get_site_cookie()
-                # 兼容旧站点域名
-                if not self._cookie:
-                    self._cookie = self.get_site_cookie("playletpt.xyz")
             else:
                 self._cookie = config.get("cookie")
 
-            # 立即更新一次配置确保喊话内容为空时使用默认值
+            # 立即更新一次配置
             self.update_config({
                 "onlyonce": False,
                 "cron": self._cron,
@@ -155,12 +129,6 @@ class PlayletFortuneWheel(_PluginBase):
                 "only_free": self._only_free,
                 "auto_cookie": self._auto_cookie,
                 "last_report": self._last_report,
-                "announce_first": self._announce_first,
-                "announce_first_content": self._announce_first_content or self._default_announce_first_content,
-                "announce_second": self._announce_second,
-                "announce_second_content": self._announce_second_content or self._default_announce_second_content,
-                "announce_medal": self._announce_medal,
-                "announce_medal_content": self._announce_medal_content or self._default_announce_medal_content,
                 "auth_token": self._auth_token,
                 "daily_summary_notify": self._daily_summary_notify,
                 "daily_summary_time": self._daily_summary_time,
@@ -189,12 +157,6 @@ class PlayletFortuneWheel(_PluginBase):
                     "only_free": self._only_free,
                     "auto_cookie": self._auto_cookie,
                     "last_report": self._last_report,
-                    "announce_first": self._announce_first,
-                    "announce_first_content": self._announce_first_content,
-                    "announce_second": self._announce_second,
-                    "announce_second_content": self._announce_second_content,
-                    "announce_medal": self._announce_medal,
-                    "announce_medal_content": self._announce_medal_content,
                     "auth_token": self._auth_token,
                     "daily_summary_notify": self._daily_summary_notify,
                     "daily_summary_time": self._daily_summary_time,
@@ -526,39 +488,22 @@ class PlayletFortuneWheel(_PluginBase):
                                key=lambda x: int(re.search(r'(\d+)等奖', x[0]).group(1)) if re.search(r'(\d+)等奖',
                                                                                                       x[0]) else 99)
 
-        # 合并多次中奖喊话内容
-        shoutbox_str_list = []
         for grade, count in sorted_grades:
             grade_num = re.search(r'(\d+)等奖', grade)
             if grade_num:
                 grade_key = grade_num.group(1)
                 icon = grade_icons.get(grade_key, "🎗️")
 
-                # 是否中一等奖
                 if grade_key == "1":
                     stats["first_prize_count"] += count
-                    if self._announce_first and self._announce_first_content:
-                        shoutbox_str_list.append(self._announce_first_content + (" " if count == 1 else " X" + str(count)))
-
-                # 是否中二等奖
-                elif grade_key == "2":
-                    if self._announce_second and self._announce_second_content:
-                        shoutbox_str_list.append(self._announce_second_content + (" " if count == 1 else " X" + str(count)))
-
-                # 是否中大赌鬼勋章
                 elif grade_key == "13":
                     stats["gambler_badge_count"] += count
-                    if self._announce_medal and self._announce_medal_content:
-                        shoutbox_str_list.append(self._announce_medal_content + (" " if count == 1 else " X" + str(count)))
-                        # 在数组顶部插入一条赌鬼勋章中奖的提示
-                        results.insert(0, "👹👹👹我是大赌鬼👹👹👹")
+                    # 在数组顶部插入一条赌鬼勋章中奖的提示
+                    results.insert(0, "👹👹👹我是大赌鬼👹👹👹")
 
             else:
                 icon = "❓"
             results.append(f"  {icon} {grade}: {count}次")
-
-        if shoutbox_str_list:
-            self.shoutbox(" | ".join(shoutbox_str_list))
 
         # 填充统计数据
         stats["magic_gain"] = total_bonus_earned
@@ -588,35 +533,6 @@ class PlayletFortuneWheel(_PluginBase):
             results.append("")
 
         return results, stats
-
-    # 发送喊话(注意合并一次,可能因为频繁而失败)
-    def shoutbox(self, text: str):
-        def _shout_task():
-            for i in range(3):
-                try:
-                    logger.info(f"发送喊话内容 (第{i+1}次尝试): {text}")
-                    self.headers = {
-                        "cookie": self.clean_cookie_value(self._cookie),
-                        "referer": self._site_url,
-                        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36 Edg/132.0.0.0"
-                    }
-                    res = requests.get(
-                        self._site_url + "/shoutbox.php?shbox_text=" + text + "&shout=%E6%88%91%E5%96%8A&sent=yes&type=shoutbox",
-                        headers=self.headers, proxies=self._get_proxies(), timeout=30)
-
-                    if res.status_code == 200:
-                        logger.info("喊话成功")
-                        return
-                    else:
-                        logger.warning(f"喊话失败: {res.status_code}")
-                except Exception as e:
-                    logger.error(f"喊话异常: {str(e)}")
-
-                if i < 2:
-                    logger.info("2分钟后重试...")
-                    time.sleep(120)
-
-        threading.Thread(target=_shout_task).start()
 
     def _upload_data(self, stats: Dict[str, int]) -> bool:
         """
@@ -787,12 +703,6 @@ class PlayletFortuneWheel(_PluginBase):
                         "only_free": self._only_free,
                         "auto_cookie": self._auto_cookie,
                         "last_report": self._last_report,
-                        "announce_first": self._announce_first,
-                        "announce_first_content": self._announce_first_content,
-                        "announce_second": self._announce_second,
-                        "announce_second_content": self._announce_second_content,
-                        "announce_medal": self._announce_medal,
-                        "announce_medal_content": self._announce_medal_content,
                         "auth_token": self._auth_token,
                     })
                     # 按照\n 分割,然后倒叙再拼接回去
@@ -863,7 +773,7 @@ class PlayletFortuneWheel(_PluginBase):
         获取站点cookie
 
         Args:
-            domain: 站点域名,默认为织梦站点
+            domain: 站点域名,默认为playlet站点
 
         Returns:
             str: 有效的cookie字符串,如果获取失败则返回空字符串
@@ -972,6 +882,22 @@ class PlayletFortuneWheel(_PluginBase):
                 "methods": ["GET"],
                 "summary": "获取每日抽奖状态",
                 "description": "获取每日抽奖状态(总人数/已抽人数)",
+            },
+            {
+                "path": "/get-notice",
+                "endpoint": self.get_notice,
+                "auth": "bear",
+                "methods": ["GET"],
+                "summary": "获取实时通知",
+                "description": "从上报服务获取实时通知内容",
+            },
+            {
+                "path": "/get-month-top-change-logs",
+                "endpoint": self.get_month_top_change_logs,
+                "auth": "bear",
+                "methods": ["GET"],
+                "summary": "获取本月榜首变更日志",
+                "description": "获取本地记录的本月榜首争夺战报日志",
             },
             {
                 "path": "/generate-daily-summary",
@@ -1129,8 +1055,12 @@ class PlayletFortuneWheel(_PluginBase):
             report = f"🎡 Playlet 伙伴风云榜 🎡\n"
             report += f"📅 {today_str}\n"
             report += "━━━━━━━━━━━━━━\n"
-            report += "📢!!!近期站点将要更换域名以及tracker地址,请留意站点公告\n"
-            report += "━━━━━━━━━━━━━━\n"
+
+            notice = self.get_notice().get("content", "")
+            if notice:
+                report += "📢 通知:\n"
+                report += notice + "\n"
+                report += "━━━━━━━━━━━━━━\n"
 
             # 概况
             if len(undrawn_users) == 0:
@@ -1192,6 +1122,12 @@ class PlayletFortuneWheel(_PluginBase):
                  report += "\n"
                  report += "─" * 14 + "\n"
 
+            month_top_report = self._build_month_top_change_report()
+            if month_top_report:
+                report += month_top_report
+                report += "\n"
+                report += "─" * 14 + "\n"
+
             # 摸鱼大队 (如果有)
             if undrawn_users:
                 report += "🐟 摸鱼大队 (公开处刑):\n"
@@ -1210,6 +1146,120 @@ class PlayletFortuneWheel(_PluginBase):
             logger.error(f"生成汇总报告失败: {str(e)}")
             return "❌ 生成报告失败"
 
+    def _build_month_top_change_report(self) -> str:
+        """
+        构建“本月榜首争夺战报”。
+        对比本次月榜榜首与上次保存的快照，首次有榜首也播报；生成的变更同时写入本地日志。
+        """
+        try:
+            status, month_data = self.call_backend("/prize-records/month-top", self._auth_token)
+            if status != 200 or not isinstance(month_data, dict):
+                logger.warning(f"获取本月榜首数据失败，跳过榜首争夺战报: {status} {month_data}")
+                return ""
+
+            current_month = datetime.now().strftime("%Y-%m")
+            current_time = datetime.now().strftime("%Y-%m-%d %H:%M")
+            old_snapshot = self.get_data("month_top_snapshot") or {}
+            old_tops = old_snapshot.get("tops") if isinstance(old_snapshot, dict) else {}
+            if not isinstance(old_tops, dict):
+                old_tops = {}
+
+            configs = [
+                {
+                    "key": "gain_top",
+                    "title": "本月大富豪",
+                    "empty": "💰 {new_user} 魔力值一路狂飙，登上本月大富豪宝座！",
+                    "changed": "💰 {new_user} 魔力值一路狂飙，踩着金币雨从 {old_user} 手中夺得本月大富豪！",
+                },
+                {
+                    "key": "first_prize_top",
+                    "title": "本月幸运星",
+                    "empty": "🌟 {new_user} 星光爆棚，凭借一等奖好运成为本月幸运星！",
+                    "changed": "🌟 {new_user} 星光爆棚，一等奖手到擒来，从 {old_user} 手中摘下本月幸运星！",
+                },
+                {
+                    "key": "loss_top",
+                    "title": "本月散财童子",
+                    "empty": "💸 {new_user} 含泪撒币，凭借惊人的亏损表现成为本月散财童子！",
+                    "changed": "💸 {new_user} 含泪撒币，凭借惊人的亏损表现从 {old_user} 手中接过本月散财童子！",
+                },
+                {
+                    "key": "gambler_badge_top",
+                    "title": "本月倒霉蛋",
+                    "empty": "👻 {new_user} 赌鬼勋章火速加身，以玄学手气成为本月倒霉蛋！",
+                    "changed": "👻 {new_user} 赌鬼勋章火速加身，以玄学手气从 {old_user} 手中夺得本月倒霉蛋！",
+                },
+            ]
+
+            current_tops = {}
+            messages = []
+            new_logs = []
+
+            for config in configs:
+                key = config["key"]
+                item = month_data.get(key)
+                new_user = item.get("user_name") if isinstance(item, dict) else None
+                if not new_user:
+                    current_tops[key] = None
+                    continue
+
+                old_user = old_tops.get(key)
+                current_tops[key] = new_user
+
+                if old_user == new_user:
+                    continue
+
+                if old_user:
+                    message = config["changed"].format(new_user=new_user, old_user=old_user)
+                else:
+                    message = config["empty"].format(new_user=new_user)
+
+                messages.append(message)
+                new_logs.append({
+                    "time": current_time,
+                    "month": current_month,
+                    "type": key,
+                    "title": config["title"],
+                    "old_user": old_user or "",
+                    "new_user": new_user,
+                    "message": message,
+                })
+
+            self.save_data("month_top_snapshot", {
+                "month": current_month,
+                "tops": current_tops,
+                "updated_at": current_time,
+            })
+
+            if new_logs:
+                logs = self.get_data("month_top_change_logs") or []
+                if not isinstance(logs, list):
+                    logs = []
+                logs = new_logs + logs
+                self.save_data("month_top_change_logs", logs[:50])
+
+            if not messages:
+                return ""
+
+            return "🏆 本月榜首争夺战报:\n" + "\n".join(messages) + "\n"
+
+        except Exception as e:
+            logger.error(f"生成本月榜首争夺战报失败: {str(e)}")
+            return ""
+
+    def get_month_top_change_logs(self):
+        """
+        获取本地保存的本月榜首争夺战报日志，最多 50 条。
+        """
+        try:
+            logs = self.get_data("month_top_change_logs") or []
+            if not isinstance(logs, list):
+                return []
+            return logs[:50]
+        except Exception as e:
+            logger.error(f"获取本月榜首争夺战报日志失败: {str(e)}")
+            return []
+
     def get_daily_magic_list(self):
         """
         获取每日魔力值榜单
@@ -1224,6 +1274,27 @@ class PlayletFortuneWheel(_PluginBase):
         except Exception as e:
             logger.error(f"获取每日魔力值榜单异常: {str(e)}")
             return []
+
+    def get_notice(self):
+        """
+        获取实时通知内容。
+        通知由上报服务维护；无通知或接口异常时返回空内容，不影响报告生成和页面展示。
+        """
+        try:
+            status, data = self.call_backend("/prize-records/notice", self._auth_token)
+            if status == 200 and isinstance(data, dict):
+                content = data.get("content") or ""
+                if isinstance(content, str):
+                    content = content.replace("/n", "\n").replace("\\n", "\n").strip()
+                else:
+                    content = ""
+                return {"content": content}
+
+            logger.warning(f"获取实时通知失败: {status} {data}")
+            return {"content": ""}
+        except Exception as e:
+            logger.error(f"获取实时通知异常: {str(e)}")
+            return {"content": ""}
 
     def get_relief_top(self):
         """
@@ -1318,12 +1389,6 @@ class PlayletFortuneWheel(_PluginBase):
                         "only_free": self._only_free,
                         "auto_cookie": self._auto_cookie,
                         "last_report": self._last_report,
-                        "announce_first": self._announce_first,
-                        "announce_first_content": self._announce_first_content,
-                        "announce_second": self._announce_second,
-                        "announce_second_content": self._announce_second_content,
-                        "announce_medal": self._announce_medal,
-                        "announce_medal_content": self._announce_medal_content,
                         "auth_token": self._auth_token,
                     })
 
@@ -1466,12 +1531,6 @@ class PlayletFortuneWheel(_PluginBase):
                             "only_free": self._only_free,
                             "auto_cookie": self._auto_cookie,
                             "last_report": self._last_report,
-                            "announce_first": self._announce_first,
-                            "announce_first_content": self._announce_first_content,
-                            "announce_second": self._announce_second,
-                            "announce_second_content": self._announce_second_content,
-                            "announce_medal": self._announce_medal,
-                            "announce_medal_content": self._announce_medal_content,
                             "auth_token": self._auth_token,
                 })
                 return {
@@ -1570,12 +1629,6 @@ class PlayletFortuneWheel(_PluginBase):
                             "only_free": self._only_free,
                             "auto_cookie": self._auto_cookie,
                             "last_report": self._last_report,
-                            "announce_first": self._announce_first,
-                            "announce_first_content": self._announce_first_content,
-                            "announce_second": self._announce_second,
-                            "announce_second_content": self._announce_second_content,
-                            "announce_medal": self._announce_medal,
-                            "announce_medal_content": self._announce_medal_content,
                             "auth_token": self._auth_token,
                         })
                         return True
@@ -1613,40 +1666,8 @@ class PlayletFortuneWheel(_PluginBase):
             "cron": "0 9 * * *",
             "max_raffle_num": None,
             "last_report": "",
-            "announce_first": True,
-            "announce_first_content": self._default_announce_first_content,
-            "announce_second": True,
-            "announce_second_content": self._default_announce_second_content,
-            "announce_medal": True,
-            "announce_medal_content": self._default_announce_medal_content,
             "auth_token": "",
         }
-
-    def _check_reupload(self):
-        """
-        检查未上报的数据并尝试重新上报
-        """
-        try:
-            with self._history_lock:
-                history = self.get_data('history') or []
-
-            # 遍历历史数据，查找未上报的记录
-            for item in history:
-                # 默认 True，兼容旧数据
-                if not item.get('is_reported', True):
-                    date_str = item.get('date')
-                    logger.info(f"发现未上报数据: {date_str}, 尝试重新上报")
-                    # 构造 stats
-                    stats = {
-                        "magic_gain": item.get("magic_gain", 0),
-                        "magic_loss": item.get("magic_loss", 0),
-                        "first_prize_count": item.get("first_prize_count", 0),
-                        "gambler_badge_count": item.get("gambler_badge_count", 0)
-                    }
-                    self.upload_report(stats, date_str)
-
-        except Exception as e:
-            logger.error(f"检查补报数据失败: {str(e)}")
 
     def get_service(self) -> List[Dict[str, Any]]:
         """
