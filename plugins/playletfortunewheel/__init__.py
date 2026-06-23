@@ -25,7 +25,7 @@ class PlayletFortuneWheel(_PluginBase):
     # 插件图标
     plugin_icon = "https://raw.githubusercontent.com/ArvinChen9539/MoviePilot-Plugins/feature-playlet-fortune-wheel/icons/PlayletFortuneWheel.png"
     # 插件版本
-    plugin_version = "2.2.1"
+    plugin_version = "2.2.2"
     # 插件作者
     plugin_author = "ArvinChen9539"
     # 作者主页
@@ -876,6 +876,14 @@ class PlayletFortuneWheel(_PluginBase):
                 "description": "获取每日魔力值变化排行榜列表",
             },
             {
+                "path": "/get-monthly-magic-list",
+                "endpoint": self.get_monthly_magic_list,
+                "auth": "bear",
+                "methods": ["GET"],
+                "summary": "获取本月魔力值榜单",
+                "description": "获取本月魔力值变化排行榜列表",
+            },
+            {
                 "path": "/get-daily-status",
                 "endpoint": self.get_daily_status,
                 "auth": "bear",
@@ -1273,6 +1281,21 @@ class PlayletFortuneWheel(_PluginBase):
                 return []
         except Exception as e:
             logger.error(f"获取每日魔力值榜单异常: {str(e)}")
+            return []
+
+    def get_monthly_magic_list(self):
+        """
+        获取本月魔力值榜单
+        """
+        try:
+            status, data = self.call_backend("/prize-records/monthly-magic-list", self._auth_token)
+            if status == 200:
+                return data
+            else:
+                logger.error(f"获取本月魔力值榜单失败: {status} {data}")
+                return []
+        except Exception as e:
+            logger.error(f"获取本月魔力值榜单异常: {str(e)}")
             return []
 
     def get_notice(self):
