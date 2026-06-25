@@ -25,7 +25,7 @@ class PlayletFortuneWheel(_PluginBase):
     # 插件图标
     plugin_icon = "https://raw.githubusercontent.com/ArvinChen9539/MoviePilot-Plugins/feature-playlet-fortune-wheel/icons/PlayletFortuneWheel.png"
     # 插件版本
-    plugin_version = "2.2.2"
+    plugin_version = "2.2.3"
     # 插件作者
     plugin_author = "ArvinChen9539"
     # 作者主页
@@ -959,8 +959,8 @@ class PlayletFortuneWheel(_PluginBase):
             # 分析数据 (这里其实可以不用传 undrawn_users，因为 generate_daily_summary_report 会重新计算)
             undrawn_users = [u for u in data_list if u.get('status') == 'undrawn']
 
-            # 生成报告
-            report = self.generate_daily_summary_report(data_list, undrawn_users)
+            # 生成报告预览时可以刷新/写入榜首战报日志，但不标记为已播报，避免提前消费定时日报里的榜首变更
+            report = self.generate_daily_summary_report(data_list, undrawn_users, persist_month_top_changes=False)
 
             return {
                 "success": True,
@@ -1007,6 +1007,7 @@ class PlayletFortuneWheel(_PluginBase):
             data_list = self.get_daily_magic_list()
             if not data_list:
                 return
+            self._refresh_month_top_cache()
 
             # 分析数据
             total_users = len(data_list)
@@ -1026,7 +1027,14 @@ class PlayletFortuneWheel(_PluginBase):
                     should_send = True
 
             if should_send:
-                logger.info("满足每日汇总发送条件，开始生成报告")
+                logger.info("满足每日汇总发送条件，发送前刷新最新数据并生成报告")
+
+                # 发送前重新拉取一次最新日榜数据，再计算未抽奖用户和月榜争夺战报
+                latest_data_list = self.get_daily_magic_list()
+                if latest_data_list:
+                    data_list = latest_data_list
+                    undrawn_users = [u for u in data_list if u.get('status') == 'undrawn']
+
                 report = self.generate_daily_summary_report(data_list, undrawn_users)
 
                 # 发送通知
@@ -1042,7 +1050,7 @@ class PlayletFortuneWheel(_PluginBase):
         except Exception as e:
             logger.error(f"检查每日汇总失败: {str(e)}")
 
-    def generate_daily_summary_report(self, data_list: List[dict], undrawn_users: List[dict]) -> str:
+    def generate_daily_summary_report(self, data_list: List[dict], undrawn_users: List[dict], persist_month_top_changes: bool = True) -> str:
         """
         生成每日汇总报告
         """
@@ -1068,6 +1076,14 @@ class PlayletFortuneWheel(_PluginBase):
             if notice:
                 report += "📢 通知:\n"
                 report += notice + "\n"
+                report += "━━━━━━━━━━━━━━\n"
+
+            # 本月榜首争夺战报放在通知下方、今日战况上方，提升每日汇总里的可见性
+            # persist_month_top_changes=True 时会把本次日报播报过的日志标记为已播报；
+            # 预览/手动生成报告时只刷新日志，不标记已播报，避免提前消费。
+            month_top_report = self._build_month_top_change_report(consume=persist_month_top_changes)
+            if month_top_report:
+                report += month_top_report
                 report += "━━━━━━━━━━━━━━\n"
 
             # 概况
@@ -1130,12 +1146,6 @@ class PlayletFortuneWheel(_PluginBase):
                  report += "\n"
                  report += "─" * 14 + "\n"
 
-            month_top_report = self._build_month_top_change_report()
-            if month_top_report:
-                report += month_top_report
-                report += "\n"
-                report += "─" * 14 + "\n"
-
             # 摸鱼大队 (如果有)
             if undrawn_users:
                 report += "🐟 摸鱼大队 (公开处刑):\n"
@@ -1154,17 +1164,71 @@ class PlayletFortuneWheel(_PluginBase):
             logger.error(f"生成汇总报告失败: {str(e)}")
             return "❌ 生成报告失败"
 
-    def _build_month_top_change_report(self) -> str:
+    def _build_month_top_change_report(self, consume: bool = True) -> str:
         """
         构建“本月榜首争夺战报”。
-        对比本次月榜榜首与上次保存的快照，首次有榜首也播报；生成的变更同时写入本地日志。
+        先刷新榜首变更日志，再从日志里取尚未被日报播报过的记录。
+        consume=False 时仅用于报告预览，不标记已播报，避免提前消费定时日报的榜首变更。
+        """
+        try:
+            self._refresh_month_top_cache()
+            logs = self.get_data("month_top_change_logs") or []
+            if not isinstance(logs, list):
+                return ""
+
+            reported_ids = self.get_data("month_top_reported_log_ids") or []
+            if not isinstance(reported_ids, list):
+                reported_ids = []
+            reported_set = set(reported_ids)
+
+            unreported_logs = []
+            for log in logs:
+                if not isinstance(log, dict):
+                    continue
+                log_id = self._get_month_top_log_id(log)
+                if log_id not in reported_set:
+                    unreported_logs.append(log)
+
+            if not unreported_logs:
+                return ""
+
+            # 日志列表按新到旧保存，日报里按发生顺序展示，读起来更自然。
+            report_logs = list(reversed(unreported_logs))
+            messages = [log.get("message", "") for log in report_logs if log.get("message")]
+            if not messages:
+                return ""
+
+            if consume:
+                new_reported_ids = [self._get_month_top_log_id(log) for log in unreported_logs]
+                self.save_data("month_top_reported_log_ids", (new_reported_ids + reported_ids)[:200])
+
+            return "🏆 本月榜首争夺战报:\n" + "\n".join(messages) + "\n"
+
+        except Exception as e:
+            logger.error(f"生成本月榜首争夺战报失败: {str(e)}")
+            return ""
+
+    def _refresh_month_top_cache(self) -> None:
+        """
+        查询一次本月榜首数据，保存最新缓存，并把人名变更写入本地战报日志。
+        这里只记录日志，不标记日报已播报，所以不会提前消费每日汇总里的榜首变更。
         """
         try:
             status, month_data = self.call_backend("/prize-records/month-top", self._auth_token)
             if status != 200 or not isinstance(month_data, dict):
-                logger.warning(f"获取本月榜首数据失败，跳过榜首争夺战报: {status} {month_data}")
-                return ""
+                logger.warning(f"刷新本月榜首缓存失败: {status} {month_data}")
+                return
+            self._save_latest_month_top_cache(month_data)
+            self._record_month_top_changes(month_data)
+        except Exception as e:
+            logger.warning(f"刷新本月榜首缓存异常: {str(e)}")
 
+    def _record_month_top_changes(self, month_data: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """
+        根据最新月榜数据记录榜首人名变更日志。
+        该方法会更新 month_top_snapshot 和 month_top_change_logs，但不会更新 month_top_reported_log_ids。
+        """
+        try:
             current_month = datetime.now().strftime("%Y-%m")
             current_time = datetime.now().strftime("%Y-%m-%d %H:%M")
             old_snapshot = self.get_data("month_top_snapshot") or {}
@@ -1200,7 +1264,6 @@ class PlayletFortuneWheel(_PluginBase):
             ]
 
             current_tops = {}
-            messages = []
             new_logs = []
 
             for config in configs:
@@ -1222,8 +1285,7 @@ class PlayletFortuneWheel(_PluginBase):
                 else:
                     message = config["empty"].format(new_user=new_user)
 
-                messages.append(message)
-                new_logs.append({
+                log = {
                     "time": current_time,
                     "month": current_month,
                     "type": key,
@@ -1231,7 +1293,9 @@ class PlayletFortuneWheel(_PluginBase):
                     "old_user": old_user or "",
                     "new_user": new_user,
                     "message": message,
-                })
+                }
+                log["id"] = self._get_month_top_log_id(log)
+                new_logs.append(log)
 
             self.save_data("month_top_snapshot", {
                 "month": current_month,
@@ -1243,17 +1307,48 @@ class PlayletFortuneWheel(_PluginBase):
                 logs = self.get_data("month_top_change_logs") or []
                 if not isinstance(logs, list):
                     logs = []
-                logs = new_logs + logs
-                self.save_data("month_top_change_logs", logs[:50])
+                existing_ids = {
+                    self._get_month_top_log_id(log)
+                    for log in logs
+                    if isinstance(log, dict)
+                }
+                deduped_new_logs = [
+                    log for log in new_logs
+                    if self._get_month_top_log_id(log) not in existing_ids
+                ]
+                if deduped_new_logs:
+                    self.save_data("month_top_change_logs", (deduped_new_logs + logs)[:50])
 
-            if not messages:
-                return ""
-
-            return "🏆 本月榜首争夺战报:\n" + "\n".join(messages) + "\n"
-
+            return new_logs
         except Exception as e:
-            logger.error(f"生成本月榜首争夺战报失败: {str(e)}")
-            return ""
+            logger.warning(f"记录本月榜首变更失败: {str(e)}")
+            return []
+
+    def _get_month_top_log_id(self, log: Dict[str, Any]) -> str:
+        """
+        生成稳定日志ID，用于区分“已记录”和“已被日报播报”。
+        """
+        return "|".join([
+            str(log.get("month", "")),
+            str(log.get("type", "")),
+            str(log.get("old_user", "")),
+            str(log.get("new_user", "")),
+            str(log.get("time", "")),
+        ])
+
+    def _save_latest_month_top_cache(self, month_data: Dict[str, Any]) -> None:
+        """
+        保存最近一次查询到的本月榜首数据。
+        这个缓存不参与变更判断，只用于保留轮询时看到的最新月榜结果。
+        """
+        try:
+            self.save_data("month_top_latest_cache", {
+                "month": datetime.now().strftime("%Y-%m"),
+                "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                "data": month_data,
+            })
+        except Exception as e:
+            logger.warning(f"保存本月榜首缓存失败: {str(e)}")
 
     def get_month_top_change_logs(self):
         """
@@ -1532,6 +1627,8 @@ class PlayletFortuneWheel(_PluginBase):
             # 检查是否是数据对象 (month-top 返回 object)
             if isinstance(data, dict) and ("loss_top" in data or "gain_top" in data):
                 month_data = data
+                self._save_latest_month_top_cache(month_data)
+                self._record_month_top_changes(month_data)
                 # 获取日榜
                 _, day_data = self.call_backend("/prize-records/day-top", self._auth_token)
 
