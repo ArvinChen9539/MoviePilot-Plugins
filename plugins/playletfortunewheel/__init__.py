@@ -25,7 +25,7 @@ class PlayletFortuneWheel(_PluginBase):
     # 插件图标
     plugin_icon = "https://raw.githubusercontent.com/ArvinChen9539/MoviePilot-Plugins/feature-playlet-fortune-wheel/icons/PlayletFortuneWheel.png"
     # 插件版本
-    plugin_version = "2.2.3"
+    plugin_version = "2.2.4"
     # 插件作者
     plugin_author = "ArvinChen9539"
     # 作者主页
@@ -1192,17 +1192,35 @@ class PlayletFortuneWheel(_PluginBase):
             if not unreported_logs:
                 return ""
 
-            # 日志列表按新到旧保存，日报里按发生顺序展示，读起来更自然。
-            report_logs = list(reversed(unreported_logs))
+            # 日报只播报每个榜单类型的最终归属，同一类型一天内反复易主也最多展示一条。
+            # 日志列表按新到旧保存，因此首次遇到的就是该类型当前最新的一条。
+            latest_log_by_type = {}
+            for log in unreported_logs:
+                log_type = log.get("type")
+                if log_type and log_type not in latest_log_by_type:
+                    latest_log_by_type[log_type] = log
+
+            report_type_order = [
+                "gain_top",
+                "first_prize_top",
+                "loss_top",
+                "gambler_badge_top",
+            ]
+            report_logs = [
+                latest_log_by_type[log_type]
+                for log_type in report_type_order
+                if log_type in latest_log_by_type
+            ]
             messages = [log.get("message", "") for log in report_logs if log.get("message")]
             if not messages:
                 return ""
 
             if consume:
+                # 中间易主记录不在日报里逐条展示，但已经被本次最终归属覆盖，也需要标记为已播报。
                 new_reported_ids = [self._get_month_top_log_id(log) for log in unreported_logs]
                 self.save_data("month_top_reported_log_ids", (new_reported_ids + reported_ids)[:200])
 
-            return "🏆 本月榜首争夺战报:\n" + "\n".join(messages) + "\n"
+            return "🏆 本月榜首争夺战报:\n" + "\n────\n".join(messages) + "\n"
 
         except Exception as e:
             logger.error(f"生成本月榜首争夺战报失败: {str(e)}")
