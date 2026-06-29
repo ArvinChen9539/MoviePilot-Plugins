@@ -2,6 +2,7 @@ import re
 import time
 import threading
 import urllib.parse
+import json
 from datetime import datetime, timedelta
 from typing import Any, List, Dict, Tuple, Optional
 
@@ -25,7 +26,7 @@ class PlayletFortuneWheel(_PluginBase):
     # 插件图标
     plugin_icon = "https://raw.githubusercontent.com/ArvinChen9539/MoviePilot-Plugins/feature-playlet-fortune-wheel/icons/PlayletFortuneWheel.png"
     # 插件版本
-    plugin_version = "2.2.4"
+    plugin_version = "2.2.5"
     # 插件作者
     plugin_author = "ArvinChen9539"
     # 作者主页
@@ -46,9 +47,13 @@ class PlayletFortuneWheel(_PluginBase):
 
     # 只抽免费
     _only_free: bool = False
+    # 自动免费抽卡
+    _auto_card_free_draw: bool = False
 
     # 保存最后一次抽奖报告
     _last_report: Optional[str] = None
+    # 保存最后一次卡牌免费抽卡报告
+    _last_card_draw_report: Optional[str] = None
 
     # 后端地址
     _backend_url: str = "http://jing999.top:8000"
@@ -105,8 +110,10 @@ class PlayletFortuneWheel(_PluginBase):
             self._onlyonce = config.get("onlyonce", False)
             self._use_proxy = config.get("use_proxy", False)
             self._only_free = config.get("only_free", False)
+            self._auto_card_free_draw = config.get("auto_card_free_draw", False)
             self._auto_cookie = config.get("auto_cookie", True)
             self._last_report = config.get("last_report")
+            self._last_card_draw_report = config.get("last_card_draw_report")
             self._auth_token = config.get("auth_token")
             self._daily_summary_notify = config.get("daily_summary_notify", True)
             self._daily_summary_time = config.get("daily_summary_time", "11:00")
@@ -127,8 +134,10 @@ class PlayletFortuneWheel(_PluginBase):
                 "notify": self._notify,
                 "use_proxy": self._use_proxy,
                 "only_free": self._only_free,
+                "auto_card_free_draw": self._auto_card_free_draw,
                 "auto_cookie": self._auto_cookie,
                 "last_report": self._last_report,
+                "last_card_draw_report": self._last_card_draw_report,
                 "auth_token": self._auth_token,
                 "daily_summary_notify": self._daily_summary_notify,
                 "daily_summary_time": self._daily_summary_time,
@@ -155,8 +164,10 @@ class PlayletFortuneWheel(_PluginBase):
                     "notify": self._notify,
                     "use_proxy": self._use_proxy,
                     "only_free": self._only_free,
+                    "auto_card_free_draw": self._auto_card_free_draw,
                     "auto_cookie": self._auto_cookie,
                     "last_report": self._last_report,
+                    "last_card_draw_report": self._last_card_draw_report,
                     "auth_token": self._auth_token,
                     "daily_summary_notify": self._daily_summary_notify,
                     "daily_summary_time": self._daily_summary_time,
@@ -177,6 +188,28 @@ class PlayletFortuneWheel(_PluginBase):
         # 移除非法字符
         cleaned = ''.join(char for char in cleaned if char not in ['\r', '\n'])
         return cleaned
+
+    def _persist_config(self):
+        """
+        持久化当前运行配置，避免新增字段在部分 update_config 场景中丢失。
+        """
+        self.update_config({
+            "onlyonce": False,
+            "cron": self._cron,
+            "max_raffle_num": self._max_raffle_num,
+            "enabled": self._enabled,
+            "cookie": self._cookie,
+            "notify": self._notify,
+            "use_proxy": self._use_proxy,
+            "only_free": self._only_free,
+            "auto_card_free_draw": self._auto_card_free_draw,
+            "auto_cookie": self._auto_cookie,
+            "last_report": self._last_report,
+            "last_card_draw_report": self._last_card_draw_report,
+            "auth_token": self._auth_token,
+            "daily_summary_notify": self._daily_summary_notify,
+            "daily_summary_time": self._daily_summary_time,
+        })
 
     # 执行抽奖
     def exec_raffle(self):
@@ -692,19 +725,7 @@ class PlayletFortuneWheel(_PluginBase):
                             title="【Playlet幸运转盘】每日任务完成",
                             text=report)
                     self._last_report = report
-                    self.update_config({
-                        "onlyonce": False,
-                        "cron": self._cron,
-                        "max_raffle_num": self._max_raffle_num,
-                        "enabled": self._enabled,
-                        "cookie": self._cookie,
-                        "notify": self._notify,
-                        "use_proxy": self._use_proxy,
-                        "only_free": self._only_free,
-                        "auto_cookie": self._auto_cookie,
-                        "last_report": self._last_report,
-                        "auth_token": self._auth_token,
-                    })
+                    self._persist_config()
                     # 按照\n 分割,然后倒叙再拼接回去
                     log_report = "\n".join(reversed(report.split("\n")))
                     logger.info(
@@ -717,6 +738,20 @@ class PlayletFortuneWheel(_PluginBase):
 
                 else:
                     logger.info("未抽奖，不发送通知")
+
+                if self._auto_card_free_draw:
+                    try:
+                        logger.info("已开启自动免费抽卡，开始执行卡牌免费单抽")
+                        card_success, card_results, card_message = self.exec_card_free_draw()
+                        if card_results and self._notify:
+                            self.post_message(
+                                mtype=NotificationType.SiteMessage,
+                                title="【Playlet幸运转盘】卡牌免费单抽完成" if card_success else "【Playlet幸运转盘】卡牌免费单抽",
+                                text="\n".join(card_results)
+                            )
+                        logger.info(f"自动免费抽卡完成: {card_message}")
+                    except Exception as e:
+                        logger.error(f"自动免费抽卡失败: {str(e)}", exc_info=True)
 
             except Exception as e:
                 logger.error(f"执行每日抽奖任务时发生异常: {str(e)}")
@@ -858,6 +893,22 @@ class PlayletFortuneWheel(_PluginBase):
                 "methods": ["POST"],
                 "summary": "立即执行抽奖",
                 "description": "立即执行一次抽奖任务",
+            },
+            {
+                "path": "/do-card-free-draw",
+                "endpoint": self.exec_card_free_draw_api,
+                "auth": "bear",
+                "methods": ["POST"],
+                "summary": "立即执行卡牌免费单抽",
+                "description": "只在存在免费次数时执行一次卡牌免费单抽，并返回抽卡结果和图鉴进度",
+            },
+            {
+                "path": "/get-card-draw-status",
+                "endpoint": self.get_card_draw_status,
+                "auth": "bear",
+                "methods": ["GET"],
+                "summary": "获取卡牌免费抽卡状态",
+                "description": "获取本地保存的卡牌免费抽卡进度和最后一次抽卡报告",
             },
             {
                 "path": "/get-token-status",
@@ -1485,6 +1536,302 @@ class PlayletFortuneWheel(_PluginBase):
             "has_token": bool(self._auth_token)
         }
 
+    def _get_card_headers(self) -> Dict[str, str]:
+        """
+        获取卡牌中心请求头。
+        """
+        return {
+            "cookie": self.clean_cookie_value(self._cookie or ""),
+            "referer": self._site_url.rstrip('/') + "/cards.php",
+            "origin": self._site_url.rstrip('/'),
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36 Edg/132.0.0.0",
+        }
+
+    @staticmethod
+    def _extract_js_object(text: str, variable_name: str) -> Optional[Dict[str, Any]]:
+        """
+        从页面中提取形如 const xxx = {...}; 的 JSON 对象。
+        """
+        try:
+            pattern = rf"const\s+{re.escape(variable_name)}\s*=\s*(\{{.*?\}});"
+            match = re.search(pattern, text, re.S)
+            if not match:
+                return None
+            return json.loads(match.group(1))
+        except Exception as e:
+            logger.warning(f"解析卡牌页面变量 {variable_name} 失败: {str(e)}")
+            return None
+
+    def _get_card_page_state(self) -> Dict[str, Any]:
+        """
+        获取卡牌中心页面状态，包括卡池配置和免费次数。
+        """
+        url = self._site_url.rstrip('/') + "/cards.php"
+        response = requests.get(url, headers=self._get_card_headers(), proxies=self._get_proxies(), timeout=15)
+        response.raise_for_status()
+        html = response.text
+
+        pool_config = self._extract_js_object(html, "cardPoolConfig") or {}
+        global_config = self._extract_js_object(html, "cardGlobalConfig") or {}
+
+        selected_pool = None
+        selected_pool_match = re.search(r'class="pool-card selected"[^>]*data-pool-id="(\d+)"', html)
+        if selected_pool_match:
+            selected_pool = selected_pool_match.group(1)
+        if not selected_pool and pool_config:
+            selected_pool = next(iter(pool_config.keys()))
+
+        free_status = global_config.get("free_draw_status") if isinstance(global_config, dict) else {}
+        if not isinstance(free_status, dict):
+            free_status = {}
+
+        return {
+            "pool_id": selected_pool,
+            "pool_config": pool_config,
+            "global_config": global_config,
+            "free_status": free_status,
+        }
+
+    def _get_card_collection_progress(self) -> Dict[str, Any]:
+        """
+        查询卡牌图鉴进度。
+        """
+        try:
+            url = self._site_url.rstrip('/') + "/cards.php?action=api&method=get_collection"
+            response = requests.get(url, headers=self._get_card_headers(), proxies=self._get_proxies(), timeout=15)
+            data = response.json()
+            if not data.get("success"):
+                return {"success": False, "message": data.get("error", "获取图鉴失败")}
+
+            cards = data.get("cards") or []
+            if not isinstance(cards, list):
+                cards = []
+
+            total = len(cards)
+            collected = len([card for card in cards if int(card.get("quantity") or 0) > 0])
+            rarity_order = ["UR", "SSR", "SR", "R", "N"]
+            rarity_stats = {
+                rarity: {
+                    "collected": len([
+                        card for card in cards
+                        if str(card.get("rarity", "")).upper() == rarity and int(card.get("quantity") or 0) > 0
+                    ]),
+                    "total": len([
+                        card for card in cards
+                        if str(card.get("rarity", "")).upper() == rarity
+                    ])
+                }
+                for rarity in rarity_order
+            }
+
+            return {
+                "success": True,
+                "collected": collected,
+                "total": total,
+                "percent": round((collected / total * 100), 2) if total else 0,
+                "rarity_stats": rarity_stats,
+            }
+        except Exception as e:
+            logger.warning(f"获取卡牌图鉴进度失败: {str(e)}")
+            return {"success": False, "message": str(e)}
+
+    def _build_card_draw_report(self, cards: List[Dict[str, Any]], free_status: Dict[str, Any],
+                                remaining_bonus: Any, progress: Dict[str, Any]) -> List[str]:
+        """
+        生成卡牌免费抽卡报告。
+        """
+        lines = [
+            "🎴 Playlet卡牌免费抽卡报告",
+            f"⏱️ {datetime.now().strftime('%Y-%m-%d %H:%M')}",
+            "━━━━━━━━━━━━━━",
+        ]
+
+        if cards:
+            lines.append(f"✨ 抽卡结果 ({len(cards)} 次):")
+            for index, card in enumerate(cards, 1):
+                rarity = str(card.get("rarity") or "未知")
+                name = str(card.get("name") or "未知卡牌")
+                series = str(card.get("series_name") or "")
+                attack = card.get("attack")
+                defense = card.get("defense")
+                lines.append(f"{index}. {rarity} · {name}")
+                if series:
+                    lines.append(f"   系列: {series}")
+                if attack is not None or defense is not None:
+                    lines.append(f"   攻防: {attack or '?'} / {defense or '?'}")
+        else:
+            lines.append("ℹ️ 未返回卡牌结果")
+
+        lines.append("━━━━━━━━━━━━━━")
+        progress_text = free_status.get("daily_progress_text")
+        if progress_text:
+            lines.append(f"🎁 今日免费进度: {progress_text}")
+
+        if progress.get("success"):
+            lines.append(f"📚 图鉴进度: {progress.get('collected', 0)} / {progress.get('total', 0)} ({progress.get('percent', 0)}%)")
+            rarity_stats = progress.get("rarity_stats") or {}
+            rarity_parts = []
+            for rarity in ["UR", "SSR", "SR", "R", "N"]:
+                item = rarity_stats.get(rarity) or {}
+                total = item.get("total", 0)
+                if total:
+                    rarity_parts.append(f"{rarity} {item.get('collected', 0)}/{total}")
+            if rarity_parts:
+                lines.append("🏷️ 稀有度: " + " | ".join(rarity_parts))
+        else:
+            lines.append(f"📚 图鉴进度: 获取失败 ({progress.get('message', '未知错误')})")
+
+        return lines
+
+    def _save_card_draw_state(self, free_status: Dict[str, Any], progress: Dict[str, Any],
+                              report_lines: Optional[List[str]] = None, success: Optional[bool] = None,
+                              message: str = "") -> None:
+        """
+        保存最近一次卡牌免费抽卡状态。即使没有免费次数导致失败，也需要更新免费进度。
+        """
+        try:
+            state = {
+                "updated_at": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                "free_status": free_status or {},
+                "progress": progress or {},
+                "success": success,
+                "message": message,
+            }
+            self.save_data("card_draw_status", state)
+
+            if report_lines:
+                self._last_card_draw_report = "\n".join(report_lines)
+                self._persist_config()
+        except Exception as e:
+            logger.warning(f"保存卡牌免费抽卡状态失败: {str(e)}")
+
+    def get_card_draw_status(self):
+        """
+        获取本地保存的卡牌免费抽卡进度和报告。
+        """
+        try:
+            state = self.get_data("card_draw_status") or {}
+            if not isinstance(state, dict):
+                state = {}
+            return {
+                "success": True,
+                "auto_enabled": self._auto_card_free_draw,
+                "updated_at": state.get("updated_at", ""),
+                "free_status": state.get("free_status") or {},
+                "progress": state.get("progress") or {},
+                "last_report": self._last_card_draw_report or "",
+                "message": state.get("message", ""),
+            }
+        except Exception as e:
+            logger.error(f"获取卡牌免费抽卡状态失败: {str(e)}")
+            return {"success": False, "message": str(e)}
+
+    def exec_card_free_draw(self) -> Tuple[bool, List[str], str]:
+        """
+        执行当前所有可用的卡牌免费单抽。
+        """
+        if not self._cookie:
+            return False, [], "未配置Cookie，无法执行免费抽卡"
+
+        state = self._get_card_page_state()
+        pool_id = state.get("pool_id")
+        free_status = state.get("free_status") or {}
+        can_free = int(free_status.get("can_free_single_draw") or 0) == 1
+        remaining = int(free_status.get("total_single_free_remaining") or 0)
+
+        if not pool_id:
+            return False, [], "未找到可用卡池"
+
+        if not can_free or remaining <= 0:
+            progress_text = free_status.get("daily_progress_text") or "0/0"
+            progress = self._get_card_collection_progress()
+            lines = [
+                "🎴 Playlet卡牌免费抽卡报告",
+                f"⏱️ {datetime.now().strftime('%Y-%m-%d %H:%M')}",
+                "━━━━━━━━━━━━━━",
+                f"ℹ️ 没有免费抽卡次数，今日免费进度: {progress_text}",
+            ]
+            if progress.get("success"):
+                lines.append(f"📚 图鉴进度: {progress.get('collected', 0)} / {progress.get('total', 0)} ({progress.get('percent', 0)}%)")
+            self._save_card_draw_state(free_status, progress, lines, False, "没有免费抽卡次数")
+            return False, lines, "没有免费抽卡次数"
+
+        url = self._site_url.rstrip('/') + "/cards.php?action=api"
+        latest_free_status = free_status
+        remaining_bonus = None
+        all_cards = []
+        draw_count = 0
+
+        # 只消耗页面明确返回的免费次数。每次抽完都读取接口返回的 free_draw_status，
+        # 一旦免费次数耗尽立即停止，避免误触发付费单抽。
+        while can_free and remaining > 0:
+            headers = self._get_card_headers()
+            headers["Content-Type"] = "application/x-www-form-urlencoded"
+            body = {
+                "method": "draw",
+                "pool_id": str(pool_id),
+                "draw_type": "single",
+            }
+            response = requests.post(url, headers=headers, data=body, proxies=self._get_proxies(), timeout=20)
+            data = response.json()
+
+            if not data.get("success"):
+                error_msg = data.get("error") or data.get("message") or "抽卡失败"
+                progress = self._get_card_collection_progress()
+                lines = self._build_card_draw_report(all_cards, latest_free_status, remaining_bonus, progress)
+                lines.append("━━━━━━━━━━━━━━")
+                lines.append(f"❌ 第 {draw_count + 1} 次免费抽卡失败: {error_msg}")
+                self._save_card_draw_state(latest_free_status, progress, lines, bool(all_cards), error_msg)
+                return bool(all_cards), lines, error_msg
+
+            cards = data.get("cards") or []
+            if isinstance(cards, list):
+                all_cards.extend(cards)
+                draw_count += len(cards)
+            else:
+                draw_count += 1
+
+            remaining_bonus = data.get("remaining_bonus")
+            latest_free_status = data.get("free_draw_status") or latest_free_status
+            can_free = int(latest_free_status.get("can_free_single_draw") or 0) == 1
+            remaining = int(latest_free_status.get("total_single_free_remaining") or 0)
+
+            if can_free and remaining > 0:
+                time.sleep(1)
+
+        progress = self._get_card_collection_progress()
+        lines = self._build_card_draw_report(all_cards, latest_free_status, remaining_bonus, progress)
+        self._save_card_draw_state(latest_free_status, progress, lines, True, f"免费抽卡完成，共 {draw_count} 次")
+        return True, lines, f"免费抽卡完成，共 {draw_count} 次"
+
+    def exec_card_free_draw_api(self):
+        """
+        API endpoint to execute one free card draw.
+        """
+        try:
+            logger.info("收到API请求：立即执行卡牌免费单抽")
+            success, results, message = self.exec_card_free_draw()
+
+            if success and self._notify:
+                self.post_message(
+                    mtype=NotificationType.SiteMessage,
+                    title="【Playlet幸运转盘】卡牌免费单抽完成",
+                    text="\n".join(results)
+                )
+
+            return {
+                "success": success,
+                "message": message,
+                "results": results,
+            }
+        except Exception as e:
+            logger.error(f"卡牌免费单抽失败: {str(e)}", exc_info=True)
+            return {
+                "success": False,
+                "message": f"卡牌免费单抽失败: {str(e)}",
+                "results": [f"❌ 卡牌免费单抽失败: {str(e)}"],
+            }
+
     def exec_raffle_api(self):
         """
         API endpoint to execute raffle immediately
@@ -1514,19 +1861,7 @@ class PlayletFortuneWheel(_PluginBase):
 
                     self._last_report = report
                     # 更新配置中的报告
-                    self.update_config({
-                        "onlyonce": False,
-                        "cron": self._cron,
-                        "max_raffle_num": self._max_raffle_num,
-                        "enabled": self._enabled,
-                        "cookie": self._cookie,
-                        "notify": self._notify,
-                        "use_proxy": self._use_proxy,
-                        "only_free": self._only_free,
-                        "auto_cookie": self._auto_cookie,
-                        "last_report": self._last_report,
-                        "auth_token": self._auth_token,
-                    })
+                    self._persist_config()
 
                     # 按照\n 分割,然后倒叙再拼接回去
                     log_report = "\n".join(reversed(report.split("\n")))
@@ -1658,19 +1993,7 @@ class PlayletFortuneWheel(_PluginBase):
             elif "token" in data:
                 username = self.get_username()
                 self._auth_token = f"{username}:{data.get('token', '')}"
-                self.update_config({
-                            "onlyonce": False,
-                            "cron": self._cron,
-                            "max_raffle_num": self._max_raffle_num,
-                            "enabled": self._enabled,
-                            "cookie": self._cookie,
-                            "notify": self._notify,
-                            "use_proxy": self._use_proxy,
-                            "only_free": self._only_free,
-                            "auto_cookie": self._auto_cookie,
-                            "last_report": self._last_report,
-                            "auth_token": self._auth_token,
-                })
+                self._persist_config()
                 return {
                    "is_authenticated": False,
                     "token": data.get("token",""),
@@ -1756,19 +2079,7 @@ class PlayletFortuneWheel(_PluginBase):
                     # 仅更新内存配置，避免频繁写文件，实际持久化需要用户手动保存或下次任务触发
                     # 但为了让用户下次进来能看到，这里还是调用update_config吧，注意不要死循环
                     try:
-                        self.update_config({
-                            "onlyonce": False,
-                            "cron": self._cron,
-                            "max_raffle_num": self._max_raffle_num,
-                            "enabled": self._enabled,
-                            "cookie": self._cookie,
-                            "notify": self._notify,
-                            "use_proxy": self._use_proxy,
-                            "only_free": self._only_free,
-                            "auto_cookie": self._auto_cookie,
-                            "last_report": self._last_report,
-                            "auth_token": self._auth_token,
-                        })
+                        self._persist_config()
                         return True
                     except Exception as e:
                         logger.error(f"更新配置失败: {str(e)}")
@@ -1799,11 +2110,13 @@ class PlayletFortuneWheel(_PluginBase):
             "notify": True,
             "use_proxy": False,
             "only_free": False,
+            "auto_card_free_draw": False,
             "cookie": "",
             "auto_cookie": True,
             "cron": "0 9 * * *",
             "max_raffle_num": None,
             "last_report": "",
+            "last_card_draw_report": "",
             "auth_token": "",
         }
 

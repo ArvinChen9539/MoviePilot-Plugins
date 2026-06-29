@@ -1,0 +1,31 @@
+
+.plugin-page[data-v-abbaed92] {
+  background-color: #f5f5f5;
+}
+.animate-pulse[data-v-abbaed92] {
+  animation: pulse-abbaed92 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+@keyframes pulse-abbaed92 {
+0%, 100% {
+    opacity: 1;
+}
+50% {
+    opacity: 0.5;
+}
+}
+.dense-row[data-v-abbaed92] {
+}
+.bg-grey-lighten-4[data-v-abbaed92] {
+  background-color: #f5f5f5 !important;
+}
+.chart[data-v-abbaed92] {
+  height: 160px;
+  width: 100%;
+}
+.lh-1[data-v-abbaed92] {
+  line-height: 1 !important;
+}
+.top-change-message[data-v-abbaed92] {
+  white-space: pre-line;
+  line-height: 1.5;
+}
